@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d86d4ba3-ecd1-4562-bf6d-48590427e8b6" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.github/workflows/publish_github.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/docs_publish.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/docs_publish.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/build_package.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/build_package.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/publish_github.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/publish_github.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
