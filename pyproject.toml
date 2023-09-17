@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "geodistpy"
-version = "0.1.0"
+version = "0.1.1"
 description = "For fast geodesic calculations"
 authors = ["Pawan <pawanjain.432@gmail.com>"]
 license = "MIT"
@@ -16,7 +16,8 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.8"
 geographiclib = "^2.0"
-scipy= "^1.10.1"
+scipy = "^1.10.1"
+numba = "^0.57.1"
 
 [tool.poetry.group.docs]
 optional = true
