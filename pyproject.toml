@@ -4,6 +4,7 @@ version = "0.1.1"
 description = "For fast geodesic calculations"
 authors = ["Pawan <pawanjain.432@gmail.com>"]
 license = "MIT"
+url="https://github.com/pawangeek/geodistpy"
 readme = "README.md"
 keywords = ["geodesic", "harvesine"]
 packages = [{include = "geodistpy"}]

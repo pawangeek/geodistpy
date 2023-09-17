@@ -1,12 +1,9 @@
-name: Publish llama-index to PyPI / GitHub
+name: Publish geodistpy to PyPI
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-
-  workflow_dispatch:
+    tags:
+      - "v*"
 
 jobs:
   build-n-publish:
