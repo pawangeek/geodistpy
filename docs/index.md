@@ -6,9 +6,9 @@ Welcome to the documentation for the `geodistpy` project. This documentation ser
 
 The documentation is organized to help you quickly find the information you need. Here are the main sections:
 
-1. [Getting Started](#getting-started)
-2. [Explanation](/explanation)
-3. [API Reference](/api-reference)
+1. [Getting Started](geodistpy/getting-started/)
+2. [Explanation](geodistpy/explanation/)
+3. [API Reference](geodistpy/api-reference/)
 
 ## Introduction
 
