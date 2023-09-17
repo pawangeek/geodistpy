@@ -1,4 +1,4 @@
-# Geodistpy: Fast and Accurate Geospatial Distance Computations
+# Explanation
 
 Geodistpy is a powerful Python library designed for lightning-fast geospatial distance computations. In this README, we'll compare Geodistpy with two other popular libraries, Geopy and Geographiclib, to highlight the significant performance advantages of Geodistpy.
 

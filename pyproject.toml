@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "geodistpy"
+version = "0.1.0"
+description = "For fast geodesic calculations"
+authors = ["Pawan <pawanjain.432@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["geodesic", "harvesine"]
+packages = [{include = "geodistpy"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: GIS"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+geographiclib = "^2.0"
+scipy= "^1.10.1"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+mkdocs-material = "^9.3.1"
+mkdocstrings = "^0.23.0"
+mkdocstrings-python = "^1.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

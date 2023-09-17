@@ -1,0 +1,23 @@
+image:
+  - Visual Studio 2019
+
+environment:
+  matrix:
+  # - TOXENV: py27  # end-of-life-branches
+  # - TOXENV: py35
+  # - TOXENV: py36
+  # - TOXENV: py37
+  - TOXENV: py38    # https://devguide.python.org/versions
+  - TOXENV: py39
+  - TOXENV: py310
+  - TOXENV: py311
+
+build: false
+
+install:
+  # - py --list
+  # - py -m pip install --upgrade pip
+  - py -m pip install tox
+
+test_script:
+  - py -m tox
