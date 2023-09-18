@@ -1,5 +1,6 @@
 # Geodistpy: Fast and Accurate Geospatial Distance Computations
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/67ff523eb3a64bb990a03a986a11cfa4)](https://app.codacy.com/gh/pawangeek/geodistpy?utm_source=github.com&utm_medium=referral&utm_content=pawangeek/geodistpy&utm_campaign=Badge_Grade)
 [![pypi](https://img.shields.io/pypi/v/geodistpy?label=PyPI&logo=PyPI&logoColor=white&color=blue)](https://pypi.python.org/pypi/geodistpy)
 [![lint](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml)
 [![Build status](https://ci.appveyor.com/api/projects/status/iqux1vla5rm8bi8r?svg=true)](https://ci.appveyor.com/project/pawangeek/geodistpy)
