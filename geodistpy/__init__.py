@@ -1,1 +1,1 @@
-from distance import *
+from geodistpy.distance import *

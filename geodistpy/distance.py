@@ -85,7 +85,16 @@ def geodist(coords1, coords2, metric="meter"):
     conv_fac = _get_conv_factor(metric)
 
     if np.size(coords1) == 2:
+        if coords1.shape[0] != 2 or coords2.shape[0] != 2:
+            raise ValueError(
+                "coords1 and coords2 must have two dimensions: Latitude, Longitude"
+            )
+        if (abs(coords1[0]) > 90).any() or (abs(coords2[0]) > 90).any():
+            raise ValueError("Latitude values must be in the range [-90, 90]")
+        if (abs(coords1[1]) > 180).any() or (abs(coords2[1]) > 180).any():
+            raise ValueError("Longitude values must be in the range [-180, 180]")
         return geodesic_vincenty(coords1, coords2) * conv_fac
+
     if coords1.shape[1] != 2:
         raise ValueError(
             "coords1 and coords2 must have two dimensions: Latitude, Longitude"

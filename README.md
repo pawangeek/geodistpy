@@ -3,6 +3,7 @@
 [![pypi](https://img.shields.io/pypi/v/geodistpy?label=PyPI&logo=PyPI&logoColor=white&color=blue)](https://pypi.python.org/pypi/geodistpy)
 [![lint](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml)
 [![Build status](https://ci.appveyor.com/api/projects/status/iqux1vla5rm8bi8r?svg=true)](https://ci.appveyor.com/project/pawangeek/geodistpy)
+[![Github Build](https://github.com/pawangeek/geodistpy/actions/workflows/publish_github.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/publish_github.yml)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/geodistpy?label=Python&logo=Python&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 

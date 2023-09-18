@@ -36,17 +36,36 @@ def geodesic_vincenty_inverse(point1, point2):
     surface of a spheroid (WGS84) based on Vincenty's formula
     for the inverse geodetic problem.
 
-    Parameters
-    ----------
-    point1 : (latitude_1, longitude_1)
-    point2 : (latitude_2, longitude_2)
+    The function calculates the geodesic distance between two points on the Earth's surface
+    using Vincenty's formula for the inverse geodetic problem. It is optimized with Numba's JIT
+    (Just-In-Time) compilation for improved performance.
 
-    Returns
-    -------
-    distance : float, in meters
+    Parameters:
+        point1 : (latitude_1, longitude_1)
+            The coordinates of the first point in the format (latitude, longitude) in degrees.
+        point2 : (latitude_2, longitude_2)
+            The coordinates of the second point in the format (latitude, longitude) in degrees.
 
-    Note: this function is an optimized implementation of the
-    vincenty python package https://github.com/maurycyp/vincenty
+    Returns:
+        distance : float, in meters
+            The geodesic distance between the points.
+
+    Notes:
+        - The function uses Vincenty's formula to compute the geodesic distance on the surface of a spheroid (WGS84).
+        - It includes parameters for controlling the convergence of the iterative calculation.
+        - The Earth's radius is assumed to be based on the WGS84 spheroid.
+        - The function is optimized for performance using Numba's JIT compilation.
+
+    Example:
+        >>> point1 = (52.5200, 13.4050)
+        >>> point2 = (48.8566, 2.3522)
+        >>> distance = geodesic_vincenty_inverse(point1, point2)
+        >>> distance
+        878389.841013836
+
+    Note:
+        This function is an optimized implementation of the Vincenty python package
+        (https://github.com/maurycyp/vincenty).
     """
 
     # WGS84 ellipsoid parameters:
@@ -138,15 +157,29 @@ def geodesic_vincenty(p1, p2):
     In the unlikely case Vincenty's inverse method fails to converge,
     the geographiclib algorithm is used instead.
 
-    Parameters
-    ----------
-    p1 : (latitude_1, longitude_1)
-    p2 : (latitude_2, longitude_2)
+    Parameters:
+        p1 : (latitude_1, longitude_1)
+            The coordinates of the first point in the format (latitude, longitude) in degrees.
+        p2 : (latitude_2, longitude_2)
+            The coordinates of the second point in the format (latitude, longitude) in degrees.
 
-    Returns
-    -------
-    distance : float, in meters
+    Returns:
+        distance : float, in meters
+            The geodesic distance between the points.
+
+    Notes:
+        - The function calculates the geodesic distance on the surface of a spheroid (WGS84) using Vincenty's formula.
+        - In case Vincenty's inverse method fails to converge, the geographiclib algorithm is used as a fallback.
+        - The Earth's radius is assumed to be based on the WGS84 spheroid.
+
+    Example:
+        >>> p1 = (52.5200, 13.4050)
+        >>> p2 = (48.8566, 2.3522)
+        >>> distance = geodesic_vincenty(p1, p2)
+        >>> distance
+        878389.841013836
     """
+
     d = geodesic_vincenty_inverse(p1, p2)
     if d is None:
         # in case vincenty fails to converge, use geographiclib
@@ -157,19 +190,39 @@ def geodesic_vincenty(p1, p2):
 
 def geodist_dimwise(X):
     """
-    Compute the pairwise geodesic distances between the data for each dimension.
-    The distance for the first two dimensions is computed as combined geodesic distance,
-    resulting in a distance metric that is spatially isotropic and has one
-    less dimension than the data.
+    Compute the pairwise geodesic distances between data points for each dimension.
 
-    Parameters
-    ----------
-    X : array-like, shape (n_samples, n_features)
+    The function calculates pairwise distances between data points along different dimensions.
+    For the first two dimensions (latitude and longitude), it computes the combined geodesic distance
+    as a single distance metric. For other dimensions, it calculates the pairwise Euclidean distances.
 
-    Returns
-    -------
-    distances : array-like, shape (n_samples, n_samples, n_features - 1), in meters squared.
+    Parameters:
+        X (array-like, shape (n_samples, n_features)): An array representing data points.
+            Each row corresponds to a data point, and each column represents a feature or dimension.
+            The first two columns are assumed to contain latitude and longitude coordinates in degrees.
+
+    Returns:
+        distances (array-like, shape (n_samples, n_samples, n_features - 1)): An array containing pairwise distances
+            between data points for each dimension. The distance for the first two dimensions (latitude and longitude)
+            is computed as a combined geodesic distance and is represented in meters squared.
+            Distances in other dimensions are pairwise Euclidean distances.
+
+    Example:
+        >>> data = np.array([
+        ...     [52.5200, 13.4050, 100],
+        ...     [48.8566, 2.3522, 200],
+        ...     [40.7128, -74.0060, 300]
+        ... ])
+        >>> distances = geodist_dimwise(data)
+        >>> distances.shape
+        (3, 3, 2)  # Each element [i, j, k] represents the pairwise distance between data points i and j along dimension k.
+
+    Notes:
+        - The combined geodesic distance for the first two dimensions (latitude and longitude) is computed using the
+          Vincenty formula.
+        - For other dimensions beyond the first two, pairwise Euclidean distances are calculated.
     """
+
     # Initialise distances to zero
     dist = np.zeros((X.shape[0], X.shape[0], X.shape[1] - 1))
     # Compute geodesic distance for latitude and longitude
@@ -185,17 +238,33 @@ def geodist_dimwise(X):
 @jit(nopython=True)
 def great_circle(u, v):
     """
-    Use spherical geometry to calculate the surface distance between
-    points.
+    Use spherical geometry to calculate the surface distance between points.
 
-    Parameters
-    ----------
-    u : (latitude_1, longitude_1)
-    v : (latitude_2, longitude_2)
+    The function calculates the surface distance between two points on the Earth's surface
+    using spherical geometry. It is optimized with Numba's JIT (Just-In-Time) compilation for
+    improved performance.
 
-    Returns
-    -------
-    distance : float, in meters
+    Parameters:
+        u : (latitude_1, longitude_1)
+            The coordinates of the first point in the format (latitude, longitude) in degrees.
+        v : (latitude_2, longitude_2)
+            The coordinates of the second point in the format (latitude, longitude) in degrees.
+
+    Returns:
+        distance : float, in meters
+            The surface distance between the points.
+
+    Notes:
+        - The function uses spherical geometry to approximate the surface distance on the Earth's sphere.
+        - The Earth's radius is assumed to be 6,371,009 meters.
+        - The function is optimized for performance using Numba's JIT compilation.
+
+    Example:
+        >>> u = (52.5200, 13.4050)
+        >>> v = (48.8566, 2.3522)
+        >>> distance = great_circle(u, v)
+        >>> distance
+        878389.841013836
     """
 
     lat1, lng1 = math.radians(u[0]), math.radians(u[1])
@@ -221,17 +290,36 @@ def great_circle(u, v):
 @jit(nopython=True)
 def great_circle_array(u, v):
     """
-    Use spherical geometry to calculate the surface distance between
-    points.
+    Use spherical geometry to calculate the surface distance between points.
 
-    Parameters
-    ----------
-    u : (latitude_1, longitude_1), floats or arrays of floats
-    v : (latitude_2, longitude_2), floats or arrays of floats
+    The function calculates the surface distance between two points on the Earth's surface
+    using spherical geometry. It is optimized with Numba's JIT (Just-In-Time) compilation for
+    improved performance.
 
-    Returns
-    -------
-    distance : float, in meters
+    Parameters:
+        u : (latitude_1, longitude_1), floats or arrays of floats
+            The coordinates of the first point in the format (latitude, longitude) in degrees.
+            It can be a single pair of coordinates or arrays of coordinates for multiple points.
+        v : (latitude_2, longitude_2), floats or arrays of floats
+            The coordinates of the second point in the format (latitude, longitude) in degrees.
+            It can be a single pair of coordinates or arrays of coordinates for multiple points.
+
+    Returns:
+        distance : float or array of floats, in meters
+            The surface distance between the points. If input arguments are arrays of coordinates,
+            the result is an array of distances.
+
+    Notes:
+        - The function uses spherical geometry to approximate the surface distance on the Earth's sphere.
+        - The Earth's radius is assumed to be 6,371,009 meters.
+        - The function is optimized for performance using Numba's JIT compilation.
+
+    Example:
+        >>> u = (52.5200, 13.4050)
+        >>> v = (48.8566, 2.3522)
+        >>> distance = great_circle_array(u, v)
+        >>> distance
+        878389.841013836
     """
 
     lat1, lng1 = np.radians(u[0]), np.radians(u[1])
@@ -256,20 +344,38 @@ def great_circle_array(u, v):
 
 def geodist_dimwise_harvesine(X):
     """
-    Compute the squared pairwise geodesic distances between the data for each dimension.
+    Compute the squared pairwise geodesic distances between data points for each dimension.
 
-    The dimension wise distances are approximated using the haversine formula
-    to split distance metric in latitudinal and longitudinal component.
-    Spherical geometry is used to approximate the surface distance with a
-    mean earth radius of 6371.009 km.
+    The function calculates pairwise distances between data points along different dimensions.
+    For latitude and longitude dimensions, it approximates the geodesic distances using the Haversine formula,
+    and for other dimensions, it calculates squared Euclidean distances.
 
-    Parameters
-    ----------
-    X : array-like, shape (n_samples, n_features)
+    Parameters:
+        X (array-like, shape (n_samples, n_features)): An array representing data points.
+            Each row corresponds to a data point, and each column represents a feature or dimension.
+            The first two columns are assumed to contain latitude and longitude coordinates in degrees.
 
-    Returns
-    -------
-    distances : array-like, shape (n_samples, n_samples, n_features), in meters squared.
+    Returns:
+        distances (array-like, shape (n_samples, n_samples, n_features)): An array containing squared pairwise distances
+            between data points for each dimension. The distances in the first two dimensions (latitude and longitude)
+            are computed using the Haversine formula and are represented in meters squared.
+            Distances in other dimensions are squared Euclidean distances.
+
+    Notes:
+        - Spherical geometry is used to approximate the surface distance with a mean earth radius of 6371.009 km.
+        - The latitude and longitude dimensions are handled separately using the Haversine formula to account for
+          the curvature of the Earth's surface.
+        - For other dimensions beyond the first two, squared Euclidean distances are calculated.
+
+    Example:
+        >>> data = np.array([
+        ...     [52.5200, 13.4050, 100],
+        ...     [48.8566, 2.3522, 200],
+        ...     [40.7128, -74.0060, 300]
+        ... ])
+        >>> distances = geodist_dimwise_haversine(data)
+        >>> distances.shape
+        (3, 3, 3)  # Each element [i, j, k] represents the squared distance between data points i and j along dimension k.
     """
     # Initialise distances to zero
     sdist = np.zeros((X.shape[0], X.shape[0], X.shape[1]))

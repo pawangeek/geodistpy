@@ -1,12 +1,11 @@
-name: Publish geodistpy to GitHub
+name: build
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - main
-  pull_request:
-
-  workflow_dispatch:
 
 jobs:
   build-n-publish:

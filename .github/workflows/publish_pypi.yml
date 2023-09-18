@@ -1,9 +1,11 @@
 name: Publish geodistpy to PyPI
 
 on:
-  push:
-    tags:
-      - "v*"
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
 
 jobs:
   build-n-publish:
