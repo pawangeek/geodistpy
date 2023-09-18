@@ -260,8 +260,8 @@ def geodist_dimwise_harvesine(X):
 
     The dimension wise distances are approximated using the haversine formula
     to split distance metric in latitudinal and longitudinal component.
-    Spherical geometry is used to approximate the surface distance wuth a
-    mean earth radius of 6371.009 km is used.
+    Spherical geometry is used to approximate the surface distance with a
+    mean earth radius of 6371.009 km.
 
     Parameters
     ----------

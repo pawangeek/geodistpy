@@ -1,10 +1,20 @@
 # Geodistpy: Fast and Accurate Geospatial Distance Computations
 
+[![pypi](https://img.shields.io/pypi/v/geodistpy?label=PyPI&logo=PyPI&logoColor=white&color=blue)](https://pypi.python.org/pypi/geodistpy)
+[![lint](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml)
+[![Build status](https://ci.appveyor.com/api/projects/status/iqux1vla5rm8bi8r?svg=true)](https://ci.appveyor.com/project/pawangeek/geodistpy)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/geodistpy?label=Python&logo=Python&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 Geodistpy is a powerful Python library designed for lightning-fast geospatial distance computations. In this README, we'll compare Geodistpy with two other popular libraries, Geopy and Geographiclib, to highlight the significant performance advantages of Geodistpy.
+
+* Documentation: https://pawangeek.github.io/geodistpy/
+* Github Repo: https://github.com/pawangeek/geodistpy
+* PyPI: https://pypi.org/project/geodistpy/
 
 ## Speed Comparison
 
-```
+```python
 # Import libraries
 from geopy.distance import geodesic as geodesic_geopy
 from geographiclib.geodesic import Geodesic as geodesic_gglib
@@ -28,8 +38,8 @@ print(f"Distance between Berlin and Paris:")
 print(f"Geopy: {distance_geopy} meters")
 print(f"Geographiclib: {distance_gglib} meters")
 print(f"Geokernels: {distance_geokernels} meters")
-
 ```
+
 We conducted a speed comparison between Geodistpy, Geopy, and Geographiclib using 1000 random samples of coordinates (latitude and longitude). The goal was to calculate all pairwise distances between these coordinates.
 
 ### Geopy (Geodesic from Geographiclib)
@@ -54,15 +64,6 @@ We conducted a speed comparison between Geodistpy, Geopy, and Geographiclib usin
 
 - Geodistpy is 78 to 142 times faster than Geopy.
 - Geodistpy is 53 to 94 times faster than Geographiclib.
-
-## Conclusion
-
-For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over both Geopy and Geographiclib, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.
-
-By adopting Geodistpy, you can significantly enhance the efficiency and performance of your geospatial projects. It is a valuable tool for geospatial professionals and developers seeking both speed and accuracy in their distance computations.
-
-To get started with Geodistpy, visit the [Geodistpy](https://github.com/pawangeek/geodistpy) and explore the documentation for comprehensive usage instructions.
-
 
 ## Context and Background
 
@@ -122,3 +123,12 @@ distance_nautical_miles = geodist(coord1, coord2, metric='nmi')
 
 print(f"Distance in meters: {distance_meters}")
 print(f"Distance in nautical miles: {distance_nautical_miles}")
+```
+
+## Conclusion
+
+For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over both Geopy and Geographiclib, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.
+
+By adopting Geodistpy, you can significantly enhance the efficiency and performance of your geospatial projects. It is a valuable tool for geospatial professionals and developers seeking both speed and accuracy in their distance computations.
+
+To get started with Geodistpy, visit the [Geodistpy](https://github.com/pawangeek/geodistpy) and explore the documentation for comprehensive usage instructions.

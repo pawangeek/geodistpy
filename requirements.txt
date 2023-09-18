@@ -1,3 +1,4 @@
 black==23.9.1
 numba==0.57.1
-scipy==1.10.1
+scipy==1.9.2
+geographiclib==2.0

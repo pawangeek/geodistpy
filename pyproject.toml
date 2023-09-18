@@ -4,7 +4,6 @@ version = "0.1.1"
 description = "For fast geodesic calculations"
 authors = ["Pawan <pawanjain.432@gmail.com>"]
 license = "MIT"
-url="https://github.com/pawangeek/geodistpy"
 readme = "README.md"
 keywords = ["geodesic", "harvesine"]
 packages = [{include = "geodistpy"}]
@@ -15,9 +14,9 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.8.1,<3.12"
 geographiclib = "^2.0"
-scipy = "^1.10.1"
+scipy = "^1.9.2"
 numba = "^0.57.1"
 
 [tool.poetry.group.docs]
@@ -31,3 +30,11 @@ mkdocstrings-python = "^1.7.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate'
