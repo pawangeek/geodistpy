@@ -3,10 +3,7 @@ image:
 
 environment:
   matrix:
-  # - TOXENV: py27  # end-of-life-branches
-  # - TOXENV: py35
-  # - TOXENV: py36
-  # - TOXENV: py37
+  - TOXENV: py39
   - TOXENV: py310
   - TOXENV: py311
   - TOXENV: py312
