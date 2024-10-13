@@ -10,7 +10,6 @@ environment:
   - TOXENV: py310
   - TOXENV: py311
   - TOXENV: py312
-  - TOXENV: py313
 
 build: false
 
