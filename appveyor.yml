@@ -7,10 +7,10 @@ environment:
   # - TOXENV: py35
   # - TOXENV: py36
   # - TOXENV: py37
-  - TOXENV: py38    # https://devguide.python.org/versions
-  - TOXENV: py39
   - TOXENV: py310
   - TOXENV: py311
+  - TOXENV: py312
+  - TOXENV: py313
 
 build: false
 
