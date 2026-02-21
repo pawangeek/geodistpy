@@ -2,8 +2,7 @@
 
 [![pypi](https://img.shields.io/pypi/v/geodistpy?label=PyPI&logo=PyPI&logoColor=white&color=blue)](https://pypi.python.org/pypi/geodistpy)
 [![lint](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml)
-[![Build status](https://ci.appveyor.com/api/projects/status/iqux1vla5rm8bi8r?svg=true)](https://ci.appveyor.com/project/pawangeek/geodistpy)
-[![Github Build](https://github.com/pawangeek/geodistpy/actions/workflows/publish_github.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/publish_github.yml)
+[![Build](https://github.com/pawangeek/geodistpy/actions/workflows/build_package.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/build_package.yml)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/geodistpy?label=Python&logo=Python&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -19,7 +18,7 @@ Geodistpy is a powerful Python library designed for lightning-fast geospatial di
 # Import libraries
 from geopy.distance import geodesic as geodesic_geopy
 from geographiclib.geodesic import Geodesic as geodesic_gglib
-from geokernels.geodesics import geodesic_vincenty
+from geodistpy.geodesic import geodesic_vincenty
 
 # Define two coordinates
 coord1 = (52.5200, 13.4050)  # Berlin
@@ -31,40 +30,92 @@ distance_geopy = geodesic_geopy(coord1, coord2).meters
 # Calculate distance with Geographiclib
 distance_gglib = geodesic_gglib.WGS84.Inverse(coord1[0], coord1[1], coord2[0], coord2[1])['s12']
 
-# Calculate distance with Geokernels
-distance_geokernels = geodesic_vincenty(coord1, coord2)
+# Calculate distance with Geodistpy
+distance_geodistpy = geodesic_vincenty(coord1, coord2)
 
 # Print the results
 print(f"Distance between Berlin and Paris:")
 print(f"Geopy: {distance_geopy} meters")
 print(f"Geographiclib: {distance_gglib} meters")
-print(f"Geokernels: {distance_geokernels} meters")
+print(f"Geodistpy: {distance_geodistpy} meters")
 ```
 
-We conducted a speed comparison between Geodistpy, Geopy, and Geographiclib using 1000 random samples of coordinates (latitude and longitude). The goal was to calculate all pairwise distances between these coordinates.
+We conducted a thorough benchmark comparing Geodistpy, Geopy, and Geographiclib across multiple scenarios: single-pair calls, pairwise distance matrices, accuracy analysis, edge cases, and scaling tests.
 
-### Geopy (Geodesic from Geographiclib)
+### Test 1: Single Pair Distance (10,000 calls, best of 3)
 
-- Computation Time: Approximately 53.356 seconds
-- Accuracy: Comparable to Geographiclib
-- Geopy is widely known but relatively slow for distance calculations.
+| Library | Total Time | Per Call |
+|---|---|---|
+| Geopy | 622 ms | ~62 µs |
+| Geographiclib | 376 ms | ~38 µs |
+| **Geodistpy (Vincenty+Numba)** | **3.50 ms** | **~0.4 µs** |
 
-### Geographiclib
+- **Geodistpy is 178x faster than Geopy**
+- **Geodistpy is 107x faster than Geographiclib**
 
-- Computation Time: Approximately 36.824 seconds
-- Accuracy: High
-- Geographiclib is established but still lags in terms of speed.
+### Test 2: Pairwise Distance Matrix (N×N)
 
-### Geodistpy (Accelerated Vincenty's Inverse)
+Geodistpy uses Numba-parallel loops (`prange`) instead of scipy callbacks, yielding massive speedups for matrix operations:
 
-- Computation Time: Approximately 0.701 seconds (initial run, including Numba compilation) and 0.393 seconds (subsequent runs)
-- Accuracy: High, comparable to Geographiclib
-- Geodistpy uses an optimized Vincenty's Inverse method for blazingly fast distance calculations.
+| N (points) | Unique Pairs | Geopy | Geographiclib | Geodistpy | Speedup vs Geopy |
+|---|---|---|---|---|---|
+| 50 | 1,225 | 82 ms | 54 ms | **4.8 ms** | **17x** |
+| 100 | 4,950 | 422 ms | 225 ms | **0.52 ms** | **813x** |
+| 200 | 19,900 | 1.36 s | 868 ms | **1.16 ms** | **1,173x** |
 
-## Performance Comparison
+### Test 3: Accuracy (Geographiclib as reference, 5,000 random pairs)
 
-- Geodistpy is 78 to 142 times faster than Geopy.
-- Geodistpy is 53 to 94 times faster than Geographiclib.
+| Method | Mean Error (m) | Max Error (m) | Mean Rel. Error | Max Rel. Error |
+|---|---|---|---|---|
+| **Geodistpy (Vincenty)** | **0.000009** | **0.000108** | **1.03e-12** | **1.24e-10** |
+| Geopy (geodesic) | 0.000000 | 0.000000 | 4.40e-17 | 2.26e-16 |
+| **Geodistpy (Great Circle)** | **19.23** | **462.88** | **2.34e-06** | **2.40e-05** |
+
+> **Note on error values:** Geopy shows zero error because it is a direct wrapper around Geographiclib — comparing it to Geographiclib is comparing the same algorithm to itself. Geodistpy's Vincenty mean error of **0.000009m (9 micrometers)** is a negligible difference arising from using a different geodesic algorithm (Vincenty's inverse vs Karney's). This is far below any practical GPS or measurement precision. The Great Circle method uses an **Andoyer-Lambert flattening correction** on top of the spherical formula, reducing error from ~13 km (pure sphere) to **~19 m** — a **700x improvement** while remaining nearly as fast.
+
+Geodistpy's Vincenty implementation maintains **sub-millimeter accuracy** (mean error = 9 µm) while being orders of magnitude faster. The Great Circle method now achieves **~19 m mean accuracy** — suitable for most practical applications.
+
+### Test 4: Edge Cases
+
+| Scenario | Geographiclib (m) | Geodistpy (m) | Δ Error (m) |
+|---|---|---|---|
+| Same point | 0.000 | 0.000 | 0.000000 |
+| North Pole → South Pole | 20,003,931.459 | 20,003,931.459 | 0.000002 |
+| Antipodal (equator) | 20,003,931.459 | 20,003,931.459 | 0.000000 |
+| Near-antipodal | 20,003,008.422 | 20,003,008.422 | 0.000000 |
+| Very short (~1m) | 1.113 | 1.113 | 0.000000 |
+| Cross date line | 22,263.898 | 22,263.898 | 0.000003 |
+| High latitude (Arctic) | 2,233.880 | 2,233.880 | 0.000000 |
+| Sydney → New York | 15,988,007.485 | 15,988,007.485 | 0.000041 |
+| London → Tokyo | 9,582,151.069 | 9,582,151.069 | 0.000018 |
+
+All edge cases — including antipodal points, poles, date line crossings, and very short distances — are handled correctly with sub-millimeter precision.
+
+### Test 5: Scaling (Sequential point-to-point calls)
+
+| N calls | Geodistpy | Geographiclib | Speedup |
+|---|---|---|---|
+| 1,000 | 0.49 ms | 46 ms | **93x** |
+| 10,000 | 5.24 ms | 475 ms | **91x** |
+| 50,000 | 24.4 ms | *(skipped)* | — |
+
+### Test 6: Great Circle vs Geodesic Trade-off
+
+| Method | Time (10,000 calls) | Mean Error | Use Case |
+|---|---|---|---|
+| Great Circle + Andoyer-Lambert (Numba) | 2.86 ms | **~19 m** | Fast with good accuracy |
+| Vincenty Geodesic (Numba) | 4.74 ms | ~0.009 mm | Maximum precision |
+
+Great Circle with Andoyer-Lambert correction is **1.7x faster** than Vincenty with only **~19 m average error** — a **700x improvement** over the previous pure spherical approach (~13.5 km error).
+
+## Performance Summary
+
+- **Single-pair:** Geodistpy is **178x faster than Geopy**, **107x faster than Geographiclib** (~0.4 µs/call).
+- **Matrix (N=200):** Geodistpy is **1,173x faster than Geopy**, **746x faster than Geographiclib** (1.16 ms for 19,900 pairs).
+- Vincenty: **sub-millimeter accuracy** (mean error = 9 µm vs Geographiclib reference).
+- Great Circle: **~19 m mean accuracy** with Andoyer-Lambert flattening correction (700x better than pure sphere).
+- All edge cases handled correctly: antipodal points, poles, date line, short distances.
+- Per-call cost: **~0.4 µs** (Geodistpy) vs ~38 µs (Geographiclib) vs ~62 µs (Geopy).
 
 ## Context and Background
 

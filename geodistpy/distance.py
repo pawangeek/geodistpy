@@ -3,31 +3,58 @@
 
 Coordinates are assumed to be in Latitude and Longitude (WGS 84). Accepting numpy arrays as input.
 
-The geospatial distance calculation is based on Vincenty's inverse method formula and accelerated with Numba (see `geokernels.geodesics.geodesic_vincenty` and references).
+The geospatial distance calculation is based on Vincenty's inverse method formula
+and accelerated with Numba (see `geodistpy.geodesic.geodesic_vincenty` and references).
 
 In a few cases (<0.01%) Vincenty's inverse method can fail to converge, and a fallback option using the slower geographiclib solution is implemented.
 
 ## Functions Included:
 
 - `geodist`: returns a list of distances between points of two lists: `dist[i] = distance(XA[i], XB[i])`
-- `geodist_matrix`: returns a distance matrix between all possible combinations of pairwise distances (either between all points in one list or points between two lists). `dist[i,j] = distance(XA[i], XB[j])` or `distance(X[i], X[j])`
+- `geodist_matrix`: returns a distance matrix between all possible combinations
+  of pairwise distances (either between all points in one list or points between
+  two lists). `dist[i,j] = distance(XA[i], XB[j])` or `distance(X[i], X[j])`
 
-This implementation provides a fast computation of geo-spatial distances in comparison to alternative methods for computing geodesic distance (tested: geopy and GeographicLib, see `geokernels.test_geodesics` for test functions).
+This implementation provides a fast computation of geo-spatial distances in comparison
+to alternative methods for computing geodesic distance
+(tested: geopy and GeographicLib, see `tests.test_geodist` for test functions).
 
 ## References:
 
 - [Vincenty's Formulae](https://en.wikipedia.org/wiki/Vincenty's_formulae)
 - [GeographicLib](https://geographiclib.sourceforge.io/)
-- Karney, Charles F. F. (January 2013). "Algorithms for geodesics". Journal of Geodesy. 87 (1): 43–55. [arXiv:1109.4448](https://arxiv.org/abs/1109.4448). Bibcode:2013JGeod..87...43K. [doi:10.1007/s00190-012-0578-z](https://doi.org/10.1007/s00190-012-0578-z). Addenda.
+- Karney, Charles F. F. (January 2013). "Algorithms for geodesics".
+  Journal of Geodesy. 87 (1): 43-55.
+  [arXiv:1109.4448](https://arxiv.org/abs/1109.4448).
+  [doi:10.1007/s00190-012-0578-z](https://doi.org/10.1007/s00190-012-0578-z).
 """
 
 import numpy as np
-from scipy.spatial.distance import pdist, cdist, squareform
 
-from .geodesic import geodesic_vincenty, great_circle, great_circle_array
+from .geodesic import (
+    geodesic_vincenty,
+    great_circle,
+    great_circle_array,
+    _vincenty_pdist,
+    _vincenty_cdist,
+    _apply_fallback,
+    _great_circle_pdist,
+    _great_circle_cdist,
+)
 
 
 def _get_conv_factor(metric):
+    """Return the conversion factor from meters to the given metric unit.
+
+    Parameters:
+        metric (str): Target unit. One of 'meter', 'km', 'mile', or 'nmi'.
+
+    Returns:
+        float: Multiplicative factor to convert meters to the target unit.
+
+    Raises:
+        ValueError: If the metric is not supported.
+    """
     if metric == "meter":
         conv_fac = 1
     elif metric == "km":
@@ -167,8 +194,8 @@ def geodist_matrix(coords1, coords2=None, metric="meter"):
         )
 
     if coords2 is None:
-        dist = pdist(coords1, metric=lambda u, v: geodesic_vincenty(u, v))
-        dist = squareform(dist)
+        dist = _vincenty_pdist(np.ascontiguousarray(coords1, dtype=np.float64))
+        dist = _apply_fallback(dist, coords1)
     else:
         coords2 = np.asarray(coords2)
 
@@ -178,7 +205,11 @@ def geodist_matrix(coords1, coords2=None, metric="meter"):
             raise ValueError(
                 "Latitude values must be in the range [-90, 90] and Longitude values must be in the range [-180, 180]."
             )
-        dist = cdist(coords1, coords2, metric=lambda u, v: geodesic_vincenty(u, v))
+        dist = _vincenty_cdist(
+            np.ascontiguousarray(coords1, dtype=np.float64),
+            np.ascontiguousarray(coords2, dtype=np.float64),
+        )
+        dist = _apply_fallback(dist, coords1, coords2)
     return dist * conv_fac
 
 
@@ -297,8 +328,7 @@ def greatcircle_matrix(coords1, coords2=None, metric="meter"):
 
     if coords2 is None:
         # If only one list of coordinates is given:
-        dist = pdist(coords1, metric=lambda u, v: great_circle(u, v))
-        dist = squareform(dist)
+        dist = _great_circle_pdist(np.ascontiguousarray(coords1, dtype=np.float64))
     else:
         coords2 = np.asarray(coords2)
         assert coords1.shape == coords2.shape
@@ -307,5 +337,8 @@ def greatcircle_matrix(coords1, coords2=None, metric="meter"):
             raise ValueError(
                 "Latitude values must be in the range [-90, 90] and Longitude values must be in the range [-180, 180]."
             )
-        dist = cdist(coords1, coords2, metric=lambda u, v: great_circle(u, v))
+        dist = _great_circle_cdist(
+            np.ascontiguousarray(coords1, dtype=np.float64),
+            np.ascontiguousarray(coords2, dtype=np.float64),
+        )
     return dist * conv_fac
