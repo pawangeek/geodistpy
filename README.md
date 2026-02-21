@@ -177,6 +177,81 @@ print(f"Distance in meters: {distance_meters}")
 print(f"Distance in nautical miles: {distance_nautical_miles}")
 ```
 
+### Example 4: Computing Bearing Between Two Points
+
+```python
+from geodistpy import bearing
+
+# Initial bearing from Berlin to Paris (clockwise from north)
+b = bearing((52.5200, 13.4050), (48.8566, 2.3522))
+print(f"Bearing from Berlin to Paris: {b:.2f}°")  # ~245.58°
+```
+
+### Example 5: Finding a Destination Point
+
+Given a starting point, bearing, and distance, compute where you end up:
+
+```python
+from geodistpy import destination
+
+# Travel 500 km due east from Berlin
+lat, lon = destination((52.5200, 13.4050), 90.0, 500, metric='km')
+print(f"Destination: ({lat:.4f}, {lon:.4f})")
+```
+
+### Example 6: Interpolating Waypoints Along a Geodesic
+
+Generate evenly-spaced waypoints between two points (great for routing and visualization):
+
+```python
+from geodistpy import interpolate, midpoint
+
+# Get the geodesic midpoint between Berlin and Paris
+mid = midpoint((52.5200, 13.4050), (48.8566, 2.3522))
+print(f"Midpoint: ({mid[0]:.4f}, {mid[1]:.4f})")
+
+# Generate 4 interior waypoints along the Berlin → Paris geodesic
+waypoints = interpolate((52.5200, 13.4050), (48.8566, 2.3522), n_points=4)
+for i, wp in enumerate(waypoints, 1):
+    print(f"  Waypoint {i}: ({wp[0]:.4f}, {wp[1]:.4f})")
+```
+
+### Example 7: Finding Points Within a Radius (Geofencing)
+
+```python
+from geodistpy import point_in_radius
+
+# European cities
+cities = [
+    (48.8566, 2.3522),    # Paris
+    (40.7128, -74.006),   # New York
+    (51.5074, -0.1278),   # London
+    (41.9028, 12.4964),   # Rome
+]
+
+# Find cities within 1500 km of Berlin
+idx, dists = point_in_radius((52.5200, 13.4050), cities, 1500, metric='km')
+print(f"Cities within 1500 km: indices {idx}, distances {dists.round(1)} km")
+```
+
+### Example 8: k-Nearest Neighbours on Geodesic Distance
+
+Find the closest points using exact ellipsoidal distances (not haversine approximation):
+
+```python
+from geodistpy import geodesic_knn
+
+# Find the 2 nearest cities to Berlin
+cities = [
+    (48.8566, 2.3522),    # Paris
+    (40.7128, -74.006),   # New York
+    (51.5074, -0.1278),   # London
+    (41.9028, 12.4964),   # Rome
+]
+idx, dists = geodesic_knn((52.5200, 13.4050), cities, k=2, metric='km')
+print(f"2 nearest: indices {idx}, distances {dists.round(1)} km")
+```
+
 ## Conclusion
 
 For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over both Geopy and Geographiclib, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.

@@ -92,6 +92,18 @@ The Great Circle function applies a first-order correction for Earth's oblatenes
 ### Numba Parallel Matrix Computation
 Distance matrices use `@jit(parallel=True)` with `prange` for automatic multi-threaded execution, eliminating the overhead of Python-level callback functions that plague scipy-based approaches.
 
+### Vincenty Direct Formula (Destination)
+The `destination()` function implements Vincenty's direct formula, which is the complement to the inverse formula. Given a starting point, initial bearing, and distance, it computes the destination point on the WGS-84 ellipsoid. Both the inverse and direct Vincenty functions are JIT-compiled with Numba.
+
+### Bearing (Forward Azimuth)
+The `bearing()` function exposes the forward azimuth already computed internally by Vincenty's inverse iteration. A full inverse variant (`geodesic_vincenty_inverse_full`) returns (distance, forward_azimuth, back_azimuth) in a single pass, making bearing extraction essentially free.
+
+### Geodesic Interpolation
+The `interpolate()` and `midpoint()` functions combine the inverse and direct Vincenty formulas: first computing the total distance and azimuth via inverse, then stepping along the geodesic using direct to produce evenly-spaced waypoints. This is useful for route visualization and great-circle path rendering.
+
+### Spatial Queries (k-NN and Point-in-Radius)
+The `geodesic_knn()` and `point_in_radius()` functions fill the gap left by sklearn's `BallTree` which only supports haversine (spherical) distances. These functions use exact Vincenty ellipsoidal distances, providing higher accuracy for geofencing, store-locator, and spatial filtering applications.
+
 ## Context and Background
 
 The Python package `geodistpy` is a versatile library designed for geospatial calculations involving distances between geographical coordinates. It is built on the principles of geodesy and uses the WGS 84 coordinate system, which is commonly used in GPS and mapping applications.
@@ -150,6 +162,82 @@ distance_nautical_miles = geodist(coord1, coord2, metric='nmi')
 
 print(f"Distance in meters: {distance_meters}")
 print(f"Distance in nautical miles: {distance_nautical_miles}")
+```
+
+### Example 4: Bearing and Destination
+
+Compute the initial bearing from one point to another, or find where you arrive after travelling a given distance at a given bearing:
+
+```python
+from geodistpy import bearing, destination
+
+berlin = (52.5200, 13.4050)
+paris  = (48.8566, 2.3522)
+
+# Forward azimuth from Berlin to Paris
+b = bearing(berlin, paris)
+print(f"Bearing Berlin → Paris: {b:.2f}°")  # ~245.58°
+
+# Travel 500 km due east from Berlin
+lat, lon = destination(berlin, 90.0, 500, metric='km')
+print(f"Destination: ({lat:.4f}, {lon:.4f})")
+```
+
+### Example 5: Geodesic Midpoint and Waypoints
+
+Generate waypoints along a geodesic path — useful for route visualisation:
+
+```python
+from geodistpy import midpoint, interpolate
+
+berlin = (52.5200, 13.4050)
+paris  = (48.8566, 2.3522)
+
+# Geodesic midpoint
+mid = midpoint(berlin, paris)
+print(f"Midpoint: ({mid[0]:.4f}, {mid[1]:.4f})")
+
+# 4 evenly-spaced interior waypoints
+waypoints = interpolate(berlin, paris, n_points=4)
+for i, wp in enumerate(waypoints, 1):
+    print(f"  Waypoint {i}: ({wp[0]:.4f}, {wp[1]:.4f})")
+```
+
+### Example 6: Geofencing with Point-in-Radius
+
+Find all points within a given geodesic radius:
+
+```python
+from geodistpy import point_in_radius
+
+cities = [
+    (48.8566, 2.3522),    # Paris
+    (40.7128, -74.006),   # New York
+    (51.5074, -0.1278),   # London
+    (41.9028, 12.4964),   # Rome
+]
+
+# Which cities are within 1500 km of Berlin?
+idx, dists = point_in_radius((52.5200, 13.4050), cities, 1500, metric='km')
+print(f"Within 1500 km: indices {idx}, distances {dists.round(1)} km")
+```
+
+### Example 7: k-Nearest Neighbours on the Ellipsoid
+
+Find the closest points using exact Vincenty distances (not haversine):
+
+```python
+from geodistpy import geodesic_knn
+
+cities = [
+    (48.8566, 2.3522),    # Paris
+    (40.7128, -74.006),   # New York
+    (51.5074, -0.1278),   # London
+    (41.9028, 12.4964),   # Rome
+]
+
+idx, dists = geodesic_knn((52.5200, 13.4050), cities, k=2, metric='km')
+print(f"2 nearest: indices {idx}, distances {dists.round(1)} km")
 ```
 
 ## Conclusion
