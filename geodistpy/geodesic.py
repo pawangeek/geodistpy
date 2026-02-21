@@ -16,7 +16,7 @@ References:
 - https://en.wikipedia.org/wiki/World_Geodetic_System
 - https://en.wikipedia.org/wiki/Great-circle_distance
 - https://geographiclib.sourceforge.io/
-- Karney, Charles F. F. (January 2013). "Algorithms for geodesics". Journal of Geodesy. 87 (1): 43–55.
+- Karney, Charles F. F. (January 2013). "Algorithms for geodesics". Journal of Geodesy. 87 (1): 43-55.
 arXiv:1109.4448. Bibcode:2013JGeod..87...43K. doi:10.1007/s00190-012-0578-z. Addenda.
 
 """

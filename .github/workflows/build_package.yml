@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "poetry==2.2.1"
       - name: Install dependencies
         run: poetry install --with lint,test
       - name: Lint

@@ -24,7 +24,7 @@ to alternative methods for computing geodesic distance
 - [Vincenty's Formulae](https://en.wikipedia.org/wiki/Vincenty's_formulae)
 - [GeographicLib](https://geographiclib.sourceforge.io/)
 - Karney, Charles F. F. (January 2013). "Algorithms for geodesics".
-  Journal of Geodesy. 87 (1): 43–55.
+  Journal of Geodesy. 87 (1): 43-55.
   [arXiv:1109.4448](https://arxiv.org/abs/1109.4448).
   [doi:10.1007/s00190-012-0578-z](https://doi.org/10.1007/s00190-012-0578-z).
 """
@@ -36,6 +36,17 @@ from .geodesic import geodesic_vincenty, great_circle, great_circle_array
 
 
 def _get_conv_factor(metric):
+    """Return the conversion factor from meters to the given metric unit.
+
+    Parameters:
+        metric (str): Target unit. One of 'meter', 'km', 'mile', or 'nmi'.
+
+    Returns:
+        float: Multiplicative factor to convert meters to the target unit.
+
+    Raises:
+        ValueError: If the metric is not supported.
+    """
     if metric == "meter":
         conv_fac = 1
     elif metric == "km":

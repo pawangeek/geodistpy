@@ -1,3 +1,5 @@
+"""Tests for geodistpy distance calculation functions."""
+
 import numpy as np
 import pytest
 
@@ -14,7 +16,7 @@ from geodistpy.geodesic import (
 
 
 # ---------------------------------------------------------------------------
-# geodist – parametrized core tests
+# geodist - parametrized core tests
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "coords1, coords2, metric, expected_distance",
@@ -28,7 +30,7 @@ from geodistpy.geodesic import (
             "mile",
             [2571.945757, 1745.768063],
         ),
-        # Coincident points – various metrics
+        # Coincident points - various metrics
         ((37.7749, -122.4194), (37.7749, -122.4194), "meter", 0.0),
         ((37.7749, -122.4194), (37.7749, -122.4194), "km", 0.0),
         ((0.0, 0.0), (0.0, 0.0), "nmi", 0.0),
@@ -42,6 +44,7 @@ from geodistpy.geodesic import (
     ],
 )
 def test_geodist(coords1, coords2, metric, expected_distance):
+    """Verify geodist returns correct distances or raises on invalid input."""
     if isinstance(expected_distance, type) and issubclass(expected_distance, Exception):
         with pytest.raises(expected_distance):
             geodist(coords1, coords2, metric)
@@ -51,27 +54,30 @@ def test_geodist(coords1, coords2, metric, expected_distance):
 
 
 # ---------------------------------------------------------------------------
-# geodist – metric conversion tests
+# geodist - metric conversion tests
 # ---------------------------------------------------------------------------
 def test_metric_conversion_meter_to_km():
+    """Verify meter and km results are consistent (factor of 1000)."""
     distance_meter = geodist((0.0, 0.0), (0.001, 0.001), metric="meter")
     distance_km = geodist((0.0, 0.0), (0.001, 0.001), metric="km")
     assert distance_meter == pytest.approx(distance_km * 1000.0, abs=1e-6)
 
 
 def test_metric_conversion_mile_to_nmi():
+    """Verify mile and nautical mile results are consistent."""
     distance_mile = geodist((0.0, 0.0), (1.0, 1.0), metric="mile")
     distance_nmi = geodist((0.0, 0.0), (1.0, 1.0), metric="nmi")
     assert distance_mile == pytest.approx(distance_nmi * 1.1507795, abs=1e-3)
 
 
 def test_unsupported_metric():
+    """Verify ValueError is raised for an unsupported metric."""
     with pytest.raises(ValueError, match="not supported"):
         geodist((0.0, 0.0), (1.0, 1.0), metric="furlongs")
 
 
 # ---------------------------------------------------------------------------
-# geodist – symmetry & triangle inequality
+# geodist - symmetry & triangle inequality
 # ---------------------------------------------------------------------------
 def test_geodist_symmetry():
     """Distance from A→B must equal B→A."""
@@ -92,16 +98,16 @@ def test_geodist_triangle_inequality():
 
 
 # ---------------------------------------------------------------------------
-# geodist – geographic edge cases
+# geodist - geographic edge cases
 # ---------------------------------------------------------------------------
 def test_geodist_equator():
-    """Two points on the equator."""
+    """Two points on the equator separated by 90 degrees longitude."""
     d = geodist((0.0, 0.0), (0.0, 90.0), metric="km")
     assert 10000 < d < 10100  # ~quarter circumference
 
 
 def test_geodist_same_longitude():
-    """Two points on the same meridian."""
+    """Two points on the same meridian from equator to pole."""
     d = geodist((0.0, 0.0), (90.0, 0.0), metric="km")
     assert 10000 < d < 10100
 
@@ -119,9 +125,10 @@ def test_geodist_antipodal():
 
 
 # ---------------------------------------------------------------------------
-# geodist_matrix – pdist mode (single list)
+# geodist_matrix - pdist mode (single list)
 # ---------------------------------------------------------------------------
 def test_geodist_matrix_pdist():
+    """Verify pdist-mode matrix is symmetric with zero diagonal."""
     coords = [(52.5200, 13.4050), (48.8566, 2.3522), (40.7128, -74.0060)]
     mat = geodist_matrix(coords, metric="km")
     assert mat.shape == (3, 3)
@@ -129,15 +136,16 @@ def test_geodist_matrix_pdist():
     np.testing.assert_allclose(np.diag(mat), 0.0, atol=1e-8)
     # Symmetric
     np.testing.assert_allclose(mat, mat.T, atol=1e-6)
-    # Berlin–Paris should match geodist
+    # Berlin-Paris should match geodist
     d_bp = geodist((52.5200, 13.4050), (48.8566, 2.3522), metric="km")
     assert mat[0, 1] == pytest.approx(d_bp, rel=1e-6)
 
 
 # ---------------------------------------------------------------------------
-# geodist_matrix – cdist mode (two lists)
+# geodist_matrix - cdist mode (two lists)
 # ---------------------------------------------------------------------------
 def test_geodist_matrix_cdist():
+    """Verify cdist-mode matrix entries match individual geodist calls."""
     coords1 = [(52.5200, 13.4050), (48.8566, 2.3522)]
     coords2 = [(40.7128, -74.0060), (41.8781, -87.6298)]
     mat = geodist_matrix(coords1, coords2, metric="mile")
@@ -150,26 +158,29 @@ def test_geodist_matrix_cdist():
 
 
 def test_geodist_matrix_invalid_coords():
+    """Verify ValueError is raised for out-of-range coordinates."""
     with pytest.raises(ValueError):
         geodist_matrix([(95.0, 0.0), (0.0, 0.0)])
 
 
 # ---------------------------------------------------------------------------
-# greatcircle – single pair
+# greatcircle - single pair
 # ---------------------------------------------------------------------------
 def test_greatcircle_single_pair():
+    """Verify great circle result is close to Vincenty for moderate distances."""
     d = greatcircle((52.5200, 13.4050), (48.8566, 2.3522), metric="km")
-    # Great circle should be close to Vincenty (within ~0.5% for moderate distances)
     d_vincenty = geodist((52.5200, 13.4050), (48.8566, 2.3522), metric="km")
     assert d == pytest.approx(d_vincenty, rel=0.005)
 
 
 def test_greatcircle_coincident():
+    """Verify zero distance for coincident points."""
     d = greatcircle((37.7749, -122.4194), (37.7749, -122.4194))
     assert d == pytest.approx(0.0, abs=1e-6)
 
 
 def test_greatcircle_multiple_pairs():
+    """Verify great circle handles multiple coordinate pairs."""
     coords1 = [(37.7749, -122.4194), (34.0522, -118.2437)]
     coords2 = [(40.7128, -74.0060), (41.8781, -87.6298)]
     d = greatcircle(coords1, coords2, metric="km")
@@ -178,6 +189,7 @@ def test_greatcircle_multiple_pairs():
 
 
 def test_greatcircle_invalid_latitude():
+    """Verify ValueError for latitude out of range."""
     with pytest.raises(ValueError):
         greatcircle(
             [(95.0, 0.0), (0.0, 0.0)],
@@ -186,6 +198,7 @@ def test_greatcircle_invalid_latitude():
 
 
 def test_greatcircle_invalid_longitude():
+    """Verify ValueError for longitude out of range."""
     with pytest.raises(ValueError):
         greatcircle(
             [(0.0, 200.0), (0.0, 0.0)],
@@ -194,9 +207,10 @@ def test_greatcircle_invalid_longitude():
 
 
 # ---------------------------------------------------------------------------
-# greatcircle_matrix – pdist mode
+# greatcircle_matrix - pdist mode
 # ---------------------------------------------------------------------------
 def test_greatcircle_matrix_pdist():
+    """Verify pdist-mode great circle matrix is symmetric with zero diagonal."""
     coords = [(52.5200, 13.4050), (48.8566, 2.3522), (37.7749, -122.4194)]
     mat = greatcircle_matrix(coords, metric="km")
     assert mat.shape == (3, 3)
@@ -205,9 +219,10 @@ def test_greatcircle_matrix_pdist():
 
 
 # ---------------------------------------------------------------------------
-# greatcircle_matrix – cdist mode
+# greatcircle_matrix - cdist mode
 # ---------------------------------------------------------------------------
 def test_greatcircle_matrix_cdist():
+    """Verify cdist-mode great circle matrix entries match pairwise calls."""
     coords1 = [(52.5200, 13.4050), (48.8566, 2.3522)]
     coords2 = [(40.7128, -74.0060), (41.8781, -87.6298)]
     mat = greatcircle_matrix(coords1, coords2, metric="km")
@@ -219,6 +234,7 @@ def test_greatcircle_matrix_cdist():
 
 
 def test_greatcircle_matrix_invalid_coords():
+    """Verify ValueError for invalid coordinates in greatcircle_matrix."""
     with pytest.raises(ValueError):
         greatcircle_matrix([(0.0, 200.0), (0.0, 0.0)])
 
@@ -227,16 +243,18 @@ def test_greatcircle_matrix_invalid_coords():
 # Low-level: geodesic_vincenty_inverse
 # ---------------------------------------------------------------------------
 def test_vincenty_inverse_coincident():
+    """Verify zero distance for coincident points via Vincenty inverse."""
     assert geodesic_vincenty_inverse((0.0, 0.0), (0.0, 0.0)) == 0.0
 
 
 def test_vincenty_inverse_known_distance():
-    """Berlin–Paris is ~879 km."""
+    """Berlin to Paris is approximately 879 km."""
     d = geodesic_vincenty_inverse((52.5200, 13.4050), (48.8566, 2.3522))
     assert d == pytest.approx(879699.316, rel=1e-3)
 
 
 def test_vincenty_inverse_pole_to_pole():
+    """Verify pole-to-pole distance via Vincenty inverse."""
     d = geodesic_vincenty_inverse((90.0, 0.0), (-90.0, 0.0))
     assert d == pytest.approx(20003931.458623, rel=1e-6)
 
@@ -245,11 +263,13 @@ def test_vincenty_inverse_pole_to_pole():
 # Low-level: geodesic_vincenty (with fallback)
 # ---------------------------------------------------------------------------
 def test_geodesic_vincenty_normal():
+    """Verify Vincenty with fallback returns correct Berlin-Paris distance."""
     d = geodesic_vincenty((52.5200, 13.4050), (48.8566, 2.3522))
     assert d == pytest.approx(879699.316, rel=1e-3)
 
 
 def test_geodesic_vincenty_coincident():
+    """Verify zero distance for coincident points via Vincenty with fallback."""
     assert geodesic_vincenty((10.0, 20.0), (10.0, 20.0)) == 0.0
 
 
@@ -257,16 +277,18 @@ def test_geodesic_vincenty_coincident():
 # Low-level: great_circle (scalar)
 # ---------------------------------------------------------------------------
 def test_great_circle_scalar():
+    """Verify scalar great circle distance for Berlin-Paris."""
     d = great_circle((52.5200, 13.4050), (48.8566, 2.3522))
     assert d > 870_000 and d < 890_000  # ~879 km
 
 
 def test_great_circle_coincident():
+    """Verify zero distance for coincident points via great circle."""
     assert great_circle((0.0, 0.0), (0.0, 0.0)) == pytest.approx(0.0, abs=1e-8)
 
 
 def test_great_circle_quarter_circumference():
-    """Equator to north pole is ~10,000 km."""
+    """Equator to north pole is approximately 10,000 km."""
     d = great_circle((0.0, 0.0), (90.0, 0.0))
     assert d == pytest.approx(6371009 * np.pi / 2, rel=1e-6)
 
@@ -275,11 +297,13 @@ def test_great_circle_quarter_circumference():
 # Low-level: great_circle_array (numpy-based)
 # ---------------------------------------------------------------------------
 def test_great_circle_array_single():
+    """Verify great_circle_array with a single coordinate pair."""
     d = great_circle_array(np.array([52.5200, 13.4050]), np.array([48.8566, 2.3522]))
     assert d > 870_000 and d < 890_000
 
 
 def test_great_circle_array_multiple():
+    """Verify great_circle_array with multiple coordinate pairs."""
     u = np.array([[52.5200, 13.4050], [37.7749, -122.4194]])
     v = np.array([[48.8566, 2.3522], [40.7128, -74.0060]])
     d = great_circle_array(u.T, v.T)
@@ -291,6 +315,7 @@ def test_great_circle_array_multiple():
 # geodist_dimwise
 # ---------------------------------------------------------------------------
 def test_geodist_dimwise_shape():
+    """Verify output shape of geodist_dimwise is (n, n, n_features - 1)."""
     X = np.array(
         [
             [52.5200, 13.4050, 100],
@@ -303,6 +328,7 @@ def test_geodist_dimwise_shape():
 
 
 def test_geodist_dimwise_diagonal_zero():
+    """Verify diagonal entries are zero in geodist_dimwise output."""
     X = np.array(
         [
             [52.5200, 13.4050, 100],
@@ -317,6 +343,7 @@ def test_geodist_dimwise_diagonal_zero():
 
 
 def test_geodist_dimwise_extra_dim_differences():
+    """Verify extra dimensions contain raw signed differences."""
     X = np.array(
         [
             [0.0, 0.0, 10],
@@ -335,6 +362,7 @@ def test_geodist_dimwise_extra_dim_differences():
 # geodist_dimwise_harvesine
 # ---------------------------------------------------------------------------
 def test_geodist_dimwise_haversine_shape():
+    """Verify output shape of geodist_dimwise_harvesine is (n, n, n_features)."""
     X = np.array(
         [
             [52.5200, 13.4050, 100],
@@ -347,6 +375,7 @@ def test_geodist_dimwise_haversine_shape():
 
 
 def test_geodist_dimwise_haversine_diagonal_zero():
+    """Verify diagonal entries are zero in haversine squared distances."""
     X = np.array(
         [
             [52.5200, 13.4050, 100],
@@ -376,6 +405,7 @@ def test_geodist_dimwise_haversine_nonnegative():
 # _get_conv_factor
 # ---------------------------------------------------------------------------
 def test_conv_factor_values():
+    """Verify conversion factors for all supported metrics."""
     assert _get_conv_factor("meter") == 1
     assert _get_conv_factor("km") == 1e-3
     assert _get_conv_factor("mile") == pytest.approx(1 / 1609.344)
@@ -383,6 +413,7 @@ def test_conv_factor_values():
 
 
 def test_conv_factor_invalid():
+    """Verify ValueError for an unsupported metric in _get_conv_factor."""
     with pytest.raises(ValueError):
         _get_conv_factor("invalid_metric")
 
@@ -400,7 +431,7 @@ def test_vincenty_vs_greatcircle_close_for_short_distances():
 
 
 def test_vincenty_vs_greatcircle_diverge_for_long_distances():
-    """For very long distances, Vincenty (ellipsoid) and Great Circle (sphere) may differ."""
+    """For very long distances, Vincenty and Great Circle should differ."""
     p1 = (0.0, 0.0)
     p2 = (0.0, 180.0)  # half the equator
     d_vincenty = geodist(p1, p2, metric="km")
@@ -415,6 +446,7 @@ def test_vincenty_vs_greatcircle_diverge_for_long_distances():
 # Consistency: matrix entries match pairwise calls
 # ---------------------------------------------------------------------------
 def test_geodist_matrix_matches_pairwise():
+    """Verify every matrix entry matches the corresponding pairwise geodist call."""
     coords = [(52.5200, 13.4050), (48.8566, 2.3522), (40.7128, -74.0060)]
     mat = geodist_matrix(coords, metric="meter")
     for i, c1 in enumerate(coords):

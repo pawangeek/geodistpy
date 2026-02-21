@@ -23,8 +23,8 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - name: Install Poetry
-        run: pip install poetry
-      - name: Install docs dependencies
-        run: poetry install --only docs
+        run: pip install "poetry==2.2.1"
+      - name: Install package and docs dependencies
+        run: poetry install --with docs
       - name: Deploy docs
         run: poetry run mkdocs gh-deploy --force
