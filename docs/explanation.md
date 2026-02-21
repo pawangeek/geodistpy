@@ -1,3 +1,8 @@
+---
+title: Performance Benchmarks & Implementation – Geodistpy vs Geopy vs Geographiclib
+description: Detailed benchmarks comparing geodistpy with Geopy and Geographiclib. Speed tests, accuracy analysis, edge cases, and implementation details of Vincenty and Great Circle methods.
+---
+
 # Explanation
 
 Geodistpy is a powerful Python library designed for lightning-fast geospatial distance computations. It uses Vincenty's inverse formula accelerated with Numba JIT compilation and parallel execution to achieve extreme performance, while maintaining sub-millimeter accuracy on the WGS84 ellipsoid.

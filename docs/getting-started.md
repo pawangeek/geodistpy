@@ -1,4 +1,9 @@
-# Getting-started
+---
+title: Getting Started with Geodistpy – Installation & Quick Start
+description: Learn how to install geodistpy and calculate geodesic distances between coordinates in Python. Step-by-step guide with code examples.
+---
+
+# Getting Started
 
 ## Installation
 
@@ -9,9 +14,10 @@ pip install geodistpy
 ```
 
 ## Quick Start Guide
+
 The quickest way to start using the `geodistpy` package is to calculate the distance between two geographical coordinates. Here's how you can do it:
 
-```
+```python
 from geodistpy import geodist
 
 # Define two coordinates in (latitude, longitude) format

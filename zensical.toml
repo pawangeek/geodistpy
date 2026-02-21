@@ -1,0 +1,96 @@
+[project]
+
+# Site name shown in browser title and header
+site_name = "Geodistpy"
+
+# SEO: Site description for search engines (appears in meta description)
+site_description = "Geodistpy is a fast and accurate Python library for geodesic distance calculations on the WGS84 ellipsoid. Up to 171x faster than Geopy with sub-millimeter accuracy."
+
+# SEO: Site author for HTML meta tags
+site_author = "Pawan Jain"
+
+# SEO: Canonical URL for the site (important for search engine indexing)
+site_url = "https://pawangeek.github.io/geodistpy/"
+
+# Copyright notice in the footer
+copyright = """
+Copyright &copy; 2024-2026 Pawan Jain. Licensed under MIT.
+"""
+
+# Navigation structure
+nav = [
+  { "Home" = "index.md" },
+  { "Getting Started" = "getting-started.md" },
+  { "API Reference" = "api-reference.md" },
+  { "Explanation" = "explanation.md" },
+]
+
+# Repository configuration
+repo_url = "https://github.com/pawangeek/geodistpy"
+repo_name = "pawangeek/geodistpy"
+
+# ----------------------------------------------------------------------------
+# Theme configuration
+# ----------------------------------------------------------------------------
+[project.theme]
+
+language = "en"
+
+features = [
+    # Code features
+    "content.code.annotate",
+    "content.code.copy",
+    "content.code.select",
+
+    # Content features
+    "content.tooltips",
+
+    # Navigation features
+    "navigation.footer",
+    "navigation.indexes",
+    "navigation.instant",
+    "navigation.instant.prefetch",
+    "navigation.path",
+    "navigation.sections",
+    "navigation.top",
+    "navigation.tracking",
+
+    # Search
+    "search.highlight",
+]
+
+# Color scheme with dark/light toggle
+[[project.theme.palette]]
+scheme = "default"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.theme.icon]
+repo = "fontawesome/brands/github"
+
+# ----------------------------------------------------------------------------
+# Social links in footer (SEO: structured social profiles)
+# ----------------------------------------------------------------------------
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/pawangeek"
+name = "Pawan on GitHub"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/linkedin"
+link = "https://in.linkedin.com/in/pawan-jain"
+name = "Pawan on LinkedIn"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/python"
+link = "https://pypi.org/project/geodistpy/"
+name = "Geodistpy on PyPI"
