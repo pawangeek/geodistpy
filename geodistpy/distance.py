@@ -37,6 +37,7 @@ from .geodesic import (
     great_circle_array,
     _vincenty_pdist,
     _vincenty_cdist,
+    _apply_fallback,
     _great_circle_pdist,
     _great_circle_cdist,
 )
@@ -194,6 +195,7 @@ def geodist_matrix(coords1, coords2=None, metric="meter"):
 
     if coords2 is None:
         dist = _vincenty_pdist(np.ascontiguousarray(coords1, dtype=np.float64))
+        dist = _apply_fallback(dist, coords1)
     else:
         coords2 = np.asarray(coords2)
 
@@ -207,6 +209,7 @@ def geodist_matrix(coords1, coords2=None, metric="meter"):
             np.ascontiguousarray(coords1, dtype=np.float64),
             np.ascontiguousarray(coords2, dtype=np.float64),
         )
+        dist = _apply_fallback(dist, coords1, coords2)
     return dist * conv_fac
 
 

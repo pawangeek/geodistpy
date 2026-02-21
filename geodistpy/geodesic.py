@@ -189,14 +189,18 @@ def geodesic_vincenty(p1, p2):
 
 @jit(nopython=True, fastmath=True, parallel=True, cache=True)
 def _vincenty_pdist(coords):
-    """Compute pairwise Vincenty distances (pdist-style) using Numba parallel."""
+    """Compute pairwise Vincenty distances (pdist-style) using Numba parallel.
+
+    Non-convergent pairs are marked with -1.0 as a sentinel value.
+    Use vincenty_pdist() (without underscore) for automatic geographiclib fallback.
+    """
     n = coords.shape[0]
     result = np.zeros((n, n))
     for i in prange(n):
         for j in range(i + 1, n):
             d = geodesic_vincenty_inverse(coords[i], coords[j])
             if d is None:
-                d = 0.0  # fallback handled at Python level if needed
+                d = -1.0  # sentinel: non-convergence
             result[i, j] = d
             result[j, i] = d
     return result
@@ -204,7 +208,11 @@ def _vincenty_pdist(coords):
 
 @jit(nopython=True, fastmath=True, parallel=True, cache=True)
 def _vincenty_cdist(coords1, coords2):
-    """Compute cross-distance Vincenty matrix using Numba parallel."""
+    """Compute cross-distance Vincenty matrix using Numba parallel.
+
+    Non-convergent pairs are marked with -1.0 as a sentinel value.
+    Use vincenty_cdist() (without underscore) for automatic geographiclib fallback.
+    """
     n1 = coords1.shape[0]
     n2 = coords2.shape[0]
     result = np.zeros((n1, n2))
@@ -212,9 +220,31 @@ def _vincenty_cdist(coords1, coords2):
         for j in range(n2):
             d = geodesic_vincenty_inverse(coords1[i], coords2[j])
             if d is None:
-                d = 0.0
+                d = -1.0  # sentinel: non-convergence
             result[i, j] = d
     return result
+
+
+def _apply_fallback(dist, coords1, coords2=None):
+    """Replace sentinel values (-1.0) with geographiclib fallback distances.
+
+    When Vincenty's method fails to converge (<0.01% of cases, typically
+    near-antipodal points), the Numba functions mark those entries with -1.0.
+    This function finds them and computes the correct distance via geographiclib.
+    """
+    mask = dist < 0.0
+    if not mask.any():
+        return dist
+    indices = np.argwhere(mask)
+    for idx in indices:
+        i, j = idx[0], idx[1]
+        p1 = coords1[i]
+        p2 = coords2[j] if coords2 is not None else coords1[j]
+        dist[i, j] = gglib.WGS84.Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
+        # Mirror for symmetric pdist case
+        if coords2 is None and i != j:
+            dist[j, i] = dist[i, j]
+    return dist
 
 
 @jit(nopython=True, fastmath=True, parallel=True, cache=True)
@@ -313,7 +343,7 @@ def great_circle(u, v):
         - The function is optimized for performance using Numba's JIT compilation.
 
     References:
-        - Andoyer, H. (1932). "Formule donnant la longueur de la géodésique joignant 2 points de l'ellipsoïde"
+        - Andoyer, H. (1932). "Formula giving the length of the geodesic joining 2 points on the ellipsoid"
         - Lambert, W. D. (1942). "The distance between two widely separated points on the surface of the earth"
 
     Example:
@@ -368,6 +398,10 @@ def great_circle(u, v):
 
     if omega == 0.0:
         return 0.0
+
+    # Guard against division by zero (e.g., pole-to-pole where S or C == 0)
+    if S == 0.0 or C == 0.0:
+        return 2.0 * omega * a
 
     R = math.sqrt(S * C) / omega
     D = 2.0 * omega * a
