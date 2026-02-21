@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://pawangeek.github.io/geodistpy/api-reference/">
       
       
-        <link rel="prev" href="../getting-started/">
+        <link rel="prev" href="../spatial-queries/">
       
       
         <link rel="next" href="../explanation/">
@@ -291,6 +291,87 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../bearing-destination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bearing & Destination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interpolation & Midpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spatial-queries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spatial Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -433,6 +514,89 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#spatial-query-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spatial Query Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spatial Query Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bearing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bearing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#destination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        destination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpolate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interpolate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#midpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        midpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#point_in_radius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        point_in_radius
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geodesic_knn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        geodesic_knn
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#supported-metrics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -465,7 +629,7 @@
   <span class="md-ellipsis">
     
   
-    Explanation
+    Benchmarks & Internals
   
 
     
@@ -572,6 +736,89 @@
     <span class="md-ellipsis">
       
         greatcircle_matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spatial-query-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spatial Query Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spatial Query Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bearing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bearing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#destination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        destination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpolate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interpolate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#midpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        midpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#point_in_radius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        point_in_radius
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geodesic_knn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        geodesic_knn
       
     </span>
   </a>
@@ -828,8 +1075,265 @@
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>       <span class="p">[</span><span class="mf">8786.58652276</span><span class="p">,</span> <span class="mf">9525.03650888</span><span class="p">,</span>    <span class="mf">0.</span>        <span class="p">]])</span>
 </span></code></pre></div>
 <hr />
+<h2 id="spatial-query-functions">Spatial Query Functions<a class="headerlink" href="#spatial-query-functions" title="Permanent link">&para;</a></h2>
+<h3 id="bearing"><code>bearing</code><a class="headerlink" href="#bearing" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">bearing</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Compute the <strong>initial bearing</strong> (forward azimuth) from <em>point1</em> to <em>point2</em> on the WGS-84 ellipsoid using Vincenty's inverse formula. The bearing is measured clockwise from true north and returned in the range <strong>[0, 360)</strong> degrees.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>point1</code></td>
+<td><code>tuple</code></td>
+<td>Starting point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+<tr>
+<td><code>point2</code></td>
+<td><code>tuple</code></td>
+<td>Destination point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> <code>float</code> — Forward azimuth in degrees (0–360).</p>
+<p><strong>Examples:</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">bearing</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">bearing</span><span class="p">((</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">),</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">))</span>   <span class="c1"># Berlin → Paris</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="mf">245.58</span><span class="o">...</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">bearing</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>                  <span class="c1"># Due east on the equator</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="mf">90.0</span>
+</span></code></pre></div>
+<hr />
+<h3 id="destination"><code>destination</code><a class="headerlink" href="#destination" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">destination</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">bearing_deg</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;meter&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Compute the <strong>destination point</strong> given a starting point, initial bearing, and distance along the geodesic on the WGS-84 ellipsoid (Vincenty direct formula).</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>point</code></td>
+<td><code>tuple</code></td>
+<td>Starting point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+<tr>
+<td><code>bearing_deg</code></td>
+<td><code>float</code></td>
+<td>Initial bearing in degrees clockwise from north</td>
+</tr>
+<tr>
+<td><code>distance</code></td>
+<td><code>float</code></td>
+<td>Distance to travel in the unit specified by <code>metric</code></td>
+</tr>
+<tr>
+<td><code>metric</code></td>
+<td><code>str</code></td>
+<td>Unit for <em>distance</em>: <code>'meter'</code>, <code>'km'</code>, <code>'mile'</code>, or <code>'nmi'</code>. Default: <code>'meter'</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> <code>tuple</code> — Destination point as <code>(latitude, longitude)</code> in degrees.</p>
+<p><strong>Examples:</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">destination</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">destination</span><span class="p">((</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">),</span> <span class="mf">245.0</span><span class="p">,</span> <span class="mf">879.0</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="p">(</span><span class="mf">48.85</span><span class="o">...</span><span class="p">,</span> <span class="mf">2.35</span><span class="o">...</span><span class="p">)</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">destination</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mf">90.0</span><span class="p">,</span> <span class="mf">111.32</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">...</span><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h3 id="interpolate"><code>interpolate</code><a class="headerlink" href="#interpolate" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">interpolate</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">,</span> <span class="n">n_points</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Return <strong>evenly-spaced waypoints</strong> along the geodesic from <em>point1</em> to <em>point2</em> on the WGS-84 ellipsoid. When <code>n_points=1</code> the function returns the <strong>midpoint</strong>. For <code>n_points=N</code> it returns <em>N</em> interior points that divide the geodesic into <em>N + 1</em> equal-length segments (endpoints are <strong>not</strong> included).</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>point1</code></td>
+<td><code>tuple</code></td>
+<td>Start point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+<tr>
+<td><code>point2</code></td>
+<td><code>tuple</code></td>
+<td>End point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+<tr>
+<td><code>n_points</code></td>
+<td><code>int</code></td>
+<td>Number of interior waypoints to return. Default: <code>1</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> <code>list of tuples</code> — Waypoints as <code>[(lat, lon), ...]</code>, ordered from <em>point1</em> towards <em>point2</em>.</p>
+<p><strong>Examples:</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">interpolate</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="n">n_points</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="o">...</span><span class="p">)]</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">interpolate</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="n">n_points</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="o">...</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="o">...</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="o">...</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="o">...</span><span class="p">)]</span>
+</span></code></pre></div>
+<hr />
+<h3 id="midpoint"><code>midpoint</code><a class="headerlink" href="#midpoint" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">midpoint</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Return the <strong>geodesic midpoint</strong> between two points on the WGS-84 ellipsoid. Convenience wrapper around <code>interpolate(point1, point2, n_points=1)</code>.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>point1</code></td>
+<td><code>tuple</code></td>
+<td>First point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+<tr>
+<td><code>point2</code></td>
+<td><code>tuple</code></td>
+<td>Second point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> <code>tuple</code> — Midpoint as <code>(latitude, longitude)</code> in degrees.</p>
+<p><strong>Examples:</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">midpoint</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">midpoint</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="o">...</span><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h3 id="point_in_radius"><code>point_in_radius</code><a class="headerlink" href="#point_in_radius" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">point_in_radius</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;meter&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Find all candidate points that lie <strong>within a given geodesic radius</strong> of a center point on the WGS-84 ellipsoid. Useful for geofencing, store-locator queries, and spatial filtering.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>center</code></td>
+<td><code>tuple</code></td>
+<td>Reference point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+<tr>
+<td><code>candidates</code></td>
+<td><code>array-like</code></td>
+<td>Array of candidate points <code>[(lat, lon), ...]</code> with shape <code>(n, 2)</code></td>
+</tr>
+<tr>
+<td><code>radius</code></td>
+<td><code>float</code></td>
+<td>Radius threshold in the unit specified by <code>metric</code></td>
+</tr>
+<tr>
+<td><code>metric</code></td>
+<td><code>str</code></td>
+<td>Unit for <em>radius</em>: <code>'meter'</code>, <code>'km'</code>, <code>'mile'</code>, or <code>'nmi'</code>. Default: <code>'meter'</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> <code>tuple (indices, distances)</code> — <em>indices</em> is an ndarray of int (indices of points within the radius); <em>distances</em> is an ndarray of float (corresponding distances).</p>
+<p><strong>Examples:</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">point_in_radius</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pts</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="p">(</span><span class="mf">40.7128</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.006</span><span class="p">),</span> <span class="p">(</span><span class="mf">51.5074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1278</span><span class="p">)]</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">point_in_radius</span><span class="p">((</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">),</span> <span class="n">pts</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">idx</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>    <span class="c1"># Paris and London are within 1000 km of Berlin</span>
+</span></code></pre></div>
+<hr />
+<h3 id="geodesic_knn"><code>geodesic_knn</code><a class="headerlink" href="#geodesic_knn" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">geodesic_knn</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;meter&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Find the <strong>k nearest neighbours</strong> to a query point among candidates using exact geodesic (Vincenty) distances on the WGS-84 ellipsoid. This fills the gap left by <code>sklearn.neighbors.BallTree</code> which only supports the haversine (spherical) metric.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>point</code></td>
+<td><code>tuple</code></td>
+<td>Query point as <code>(lat, lon)</code> in degrees</td>
+</tr>
+<tr>
+<td><code>candidates</code></td>
+<td><code>array-like</code></td>
+<td>Array of candidate points <code>[(lat, lon), ...]</code> with shape <code>(n, 2)</code></td>
+</tr>
+<tr>
+<td><code>k</code></td>
+<td><code>int</code></td>
+<td>Number of nearest neighbours to return. Default: <code>1</code></td>
+</tr>
+<tr>
+<td><code>metric</code></td>
+<td><code>str</code></td>
+<td>Unit for returned distances: <code>'meter'</code>, <code>'km'</code>, <code>'mile'</code>, or <code>'nmi'</code>. Default: <code>'meter'</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> <code>tuple (indices, distances)</code> — <em>indices</em> is an ndarray of int, shape <code>(k,)</code> (indices of the <em>k</em> closest points, ordered nearest-first); <em>distances</em> is an ndarray of float, shape <code>(k,)</code>.</p>
+<p><strong>Raises:</strong></p>
+<ul>
+<li><code>ValueError</code> — If <code>k &lt; 1</code>, <code>k &gt; n</code>, or coordinates are out of range.</li>
+</ul>
+<p><strong>Examples:</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">geodesic_knn</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pts</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="p">(</span><span class="mf">40.7128</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.006</span><span class="p">),</span> <span class="p">(</span><span class="mf">51.5074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1278</span><span class="p">)]</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">geodesic_knn</span><span class="p">((</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">),</span> <span class="n">pts</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">idx</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>    <span class="c1"># Paris (~880 km) and London (~930 km) are nearest</span>
+</span></code></pre></div>
+<hr />
 <h2 id="supported-metrics">Supported Metrics<a class="headerlink" href="#supported-metrics" title="Permanent link">&para;</a></h2>
-<p>All distance functions accept a <code>metric</code> parameter with one of the following values:</p>
+<p>All distance and spatial query functions accept a <code>metric</code> parameter with one of the following values:</p>
 <table>
 <thead>
 <tr>
@@ -901,7 +1405,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../getting-started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Getting Started">
+          <a href="../spatial-queries/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Spatial Queries">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -911,20 +1415,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Getting Started
+                Spatial Queries
               </div>
             </div>
           </a>
         
         
           
-          <a href="../explanation/" class="md-footer__link md-footer__link--next" aria-label="Next: Explanation">
+          <a href="../explanation/" class="md-footer__link md-footer__link--next" aria-label="Next: Benchmarks &amp; Internals">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Explanation
+                Benchmarks & Internals
               </div>
             </div>
             <div class="md-footer__button md-icon">
