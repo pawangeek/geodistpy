@@ -8,10 +8,24 @@ readme = "README.md"
 keywords = ["geodesic", "harvesine"]
 packages = [{include = "geodistpy"}]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "Natural Language :: English",
-    "Topic :: Scientific/Engineering :: GIS"
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries"
 ]
+
+[tool.poetry.urls]
+homepage = "https://pawangeek.github.io/geodistpy/"
+documentation = "https://pawangeek.github.io/geodistpy/"
+source = "https://github.com/pawangeek/geodistpy"
+download = "https://github.com/pawangeek/geodistpy/releases"
+tracker = "https://github.com/pawangeek/geodistpy/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.15"
