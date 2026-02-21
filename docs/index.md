@@ -10,8 +10,11 @@ Welcome to the documentation for the `geodistpy` project — a high-performance 
 ## Table Of Contents
 
 1. [Getting Started](getting-started.md) — Installation and quick start guide
-2. [Explanation](explanation.md) — Benchmarks, accuracy, and implementation details
-3. [API Reference](api-reference.md) — Complete function reference
+2. [Bearing & Destination](bearing-destination.md) — Forward azimuth and Vincenty direct/inverse
+3. [Interpolation & Midpoints](interpolation.md) — Geodesic waypoints and path generation
+4. [Spatial Queries](spatial-queries.md) — k-NN and point-in-radius on the ellipsoid
+5. [API Reference](api-reference.md) — Complete function reference
+6. [Benchmarks & Internals](explanation.md) — Performance benchmarks and implementation details
 
 ## Introduction
 
@@ -24,18 +27,39 @@ The `geodistpy` package is a versatile library for geospatial calculations, offe
 - **Sub-millimeter accuracy:** Vincenty's inverse formula with mean error of just 9 µm vs Geographiclib reference
 - **Improved Great Circle:** Andoyer-Lambert flattening correction reduces spherical approximation error by **700x** (from ~13 km to ~19 m)
 - **Edge case handling:** Antipodal points, poles, date line crossings, and very short distances all handled correctly
+- **Bearing & destination:** Compute forward azimuth between points and find destination given start + bearing + distance (Vincenty inverse/direct pair)
+- **Geodesic interpolation:** Generate evenly-spaced waypoints and midpoints along geodesics for routing and visualization
+- **Spatial queries:** Point-in-radius filtering (geofencing) and k-nearest-neighbour search using exact ellipsoidal distances
 
 ## Quick Example
 
 ```python
-from geodistpy import geodist
+from geodistpy import geodist, bearing, destination, midpoint, geodesic_knn
 
 # Define two coordinates (latitude, longitude)
-coord1 = (52.5200, 13.4050)  # Berlin, Germany
-coord2 = (48.8566, 2.3522)   # Paris, France
+berlin = (52.5200, 13.4050)
+paris  = (48.8566, 2.3522)
 
-distance_km = geodist(coord1, coord2, metric='km')
-print(f"Distance: {distance_km} km")
+# Distance
+distance_km = geodist(berlin, paris, metric='km')
+print(f"Distance: {distance_km:.1f} km")
+
+# Bearing (forward azimuth)
+b = bearing(berlin, paris)
+print(f"Bearing: {b:.2f}°")
+
+# Destination: travel 500 km due east from Berlin
+lat, lon = destination(berlin, 90.0, 500, metric='km')
+print(f"Destination: ({lat:.4f}, {lon:.4f})")
+
+# Midpoint
+mid = midpoint(berlin, paris)
+print(f"Midpoint: ({mid[0]:.4f}, {mid[1]:.4f})")
+
+# k-NN: find 2 nearest cities to Berlin
+cities = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
+idx, dists = geodesic_knn(berlin, cities, k=2, metric='km')
+print(f"2 nearest: {idx}, distances: {dists.round(1)} km")
 ```
 
 ## Links

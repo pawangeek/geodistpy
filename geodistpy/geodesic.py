@@ -318,6 +318,249 @@ def geodist_dimwise(X):
 
 
 @jit(nopython=True, fastmath=True, cache=True)
+def geodesic_vincenty_inverse_full(point1, point2):
+    """
+    Compute the geodesic distance **and** forward/back azimuths between two
+    points on the WGS-84 ellipsoid using Vincenty's inverse formula.
+
+    This is the "full" variant of :func:`geodesic_vincenty_inverse`; it
+    returns a 3-element tuple ``(distance, fwd_azimuth, back_azimuth)``
+    instead of just the scalar distance.
+
+    Parameters:
+        point1 : (latitude_1, longitude_1)
+            The coordinates of the first point in degrees.
+        point2 : (latitude_2, longitude_2)
+            The coordinates of the second point in degrees.
+
+    Returns:
+        (distance, fwd_azimuth, back_azimuth) : (float, float, float)
+            *distance* in **meters**, azimuths in **degrees** (0–360).
+            Returns ``(0.0, 0.0, 0.0)`` for coincident points and
+            ``(-1.0, 0.0, 0.0)`` when the iteration does not converge.
+    """
+    # WGS84 ellipsoid parameters
+    a = 6378137.0
+    f = 1.0 / 298.257223563
+    b = a * (1.0 - f)
+
+    max_iterations = 200
+    convergence_threshold = 1e-11
+
+    if point1[0] == point2[0] and point1[1] == point2[1]:
+        return (0.0, 0.0, 0.0)
+
+    u1 = math.atan((1 - f) * math.tan(math.radians(point1[0])))
+    u2 = math.atan((1 - f) * math.tan(math.radians(point2[0])))
+    l = math.radians(point2[1] - point1[1])
+    lam = l
+
+    sin_u1 = math.sin(u1)
+    cos_u1 = math.cos(u1)
+    sin_u2 = math.sin(u2)
+    cos_u2 = math.cos(u2)
+
+    converged = False
+    sin_lam = 0.0
+    cos_lam = 0.0
+    sin_sigma = 0.0
+    cos_sigma = 0.0
+    sigma = 0.0
+    sin_alpha = 0.0
+    cos_sq_alpha = 0.0
+    cos_2sigma_m = 0.0
+
+    for iteration in range(max_iterations):
+        sin_lam = math.sin(lam)
+        cos_lam = math.cos(lam)
+        sin_sigma = math.sqrt(
+            (cos_u2 * sin_lam) ** 2 + (cos_u1 * sin_u2 - sin_u1 * cos_u2 * cos_lam) ** 2
+        )
+        if sin_sigma == 0.0:
+            return (0.0, 0.0, 0.0)
+        cos_sigma = sin_u1 * sin_u2 + cos_u1 * cos_u2 * cos_lam
+        sigma = math.atan2(sin_sigma, cos_sigma)
+        sin_alpha = cos_u1 * cos_u2 * sin_lam / sin_sigma
+        cos_sq_alpha = 1.0 - sin_alpha**2
+        if cos_sq_alpha != 0.0:
+            cos_2sigma_m = cos_sigma - 2.0 * sin_u1 * sin_u2 / cos_sq_alpha
+            c = f / 16.0 * cos_sq_alpha * (4.0 + f * (4.0 - 3.0 * cos_sq_alpha))
+        else:
+            cos_2sigma_m = 0.0
+            c = 0.0
+        lam_prev = lam
+        lam = l + (1.0 - c) * f * sin_alpha * (
+            sigma
+            + c
+            * sin_sigma
+            * (cos_2sigma_m + c * cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2))
+        )
+        if abs(lam - lam_prev) < convergence_threshold:
+            converged = True
+            break
+
+    if not converged:
+        return (-1.0, 0.0, 0.0)  # sentinel: non-convergence
+
+    u_sq = cos_sq_alpha * (a**2 - b**2) / (b**2)
+    A = 1.0 + u_sq / 16384.0 * (
+        4096.0 + u_sq * (-768.0 + u_sq * (320.0 - 175.0 * u_sq))
+    )
+    B = u_sq / 1024.0 * (256.0 + u_sq * (-128.0 + u_sq * (74.0 - 47.0 * u_sq)))
+    delta_sigma = (
+        B
+        * sin_sigma
+        * (
+            cos_2sigma_m
+            + B
+            / 4.0
+            * (
+                cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2)
+                - B
+                / 6.0
+                * cos_2sigma_m
+                * (-3.0 + 4.0 * sin_sigma**2)
+                * (-3.0 + 4.0 * cos_2sigma_m**2)
+            )
+        )
+    )
+    s = b * A * (sigma - delta_sigma)
+
+    # Forward azimuth (point1 → point2)
+    fwd_az = math.degrees(
+        math.atan2(
+            cos_u2 * sin_lam,
+            cos_u1 * sin_u2 - sin_u1 * cos_u2 * cos_lam,
+        )
+    )
+    # Back azimuth (point2 → point1)
+    back_az = math.degrees(
+        math.atan2(
+            cos_u1 * sin_lam,
+            -sin_u1 * cos_u2 + cos_u1 * sin_u2 * cos_lam,
+        )
+    )
+    # Normalise to [0, 360)
+    fwd_az = fwd_az % 360.0
+    back_az = back_az % 360.0
+
+    return (s, fwd_az, back_az)
+
+
+@jit(nopython=True, fastmath=True, cache=True)
+def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
+    """
+    Compute the destination point given a start point, initial bearing, and
+    distance along the geodesic on the WGS-84 ellipsoid (Vincenty direct).
+
+    Parameters:
+        point : (latitude, longitude)
+            Starting coordinates in degrees.
+        azimuth_deg : float
+            Initial bearing (forward azimuth) in degrees clockwise from north.
+        distance_m : float
+            Distance to travel along the geodesic in **meters**.
+
+    Returns:
+        (latitude, longitude) : (float, float)
+            Destination point in degrees.  Returns ``(nan, nan)`` if the
+            iteration fails to converge.
+
+    References:
+        Vincenty, T. (1975). "Direct and inverse solutions of geodesics on the
+        ellipsoid with application of nested equations". Survey Review.
+    """
+    # WGS84 ellipsoid parameters
+    a = 6378137.0
+    f = 1.0 / 298.257223563
+    b = a * (1.0 - f)
+
+    max_iterations = 200
+    convergence_threshold = 1e-11
+
+    alpha1 = math.radians(azimuth_deg)
+    sin_alpha1 = math.sin(alpha1)
+    cos_alpha1 = math.cos(alpha1)
+
+    tan_u1 = (1.0 - f) * math.tan(math.radians(point[0]))
+    cos_u1 = 1.0 / math.sqrt(1.0 + tan_u1**2)
+    sin_u1 = tan_u1 * cos_u1
+
+    sigma1 = math.atan2(tan_u1, cos_alpha1)
+    sin_alpha = cos_u1 * sin_alpha1
+    cos_sq_alpha = 1.0 - sin_alpha**2
+
+    u_sq = cos_sq_alpha * (a**2 - b**2) / (b**2)
+    A = 1.0 + u_sq / 16384.0 * (
+        4096.0 + u_sq * (-768.0 + u_sq * (320.0 - 175.0 * u_sq))
+    )
+    B = u_sq / 1024.0 * (256.0 + u_sq * (-128.0 + u_sq * (74.0 - 47.0 * u_sq)))
+
+    sigma = distance_m / (b * A)
+
+    converged = False
+    for _iteration in range(max_iterations):
+        cos_2sigma_m = math.cos(2.0 * sigma1 + sigma)
+        sin_sigma = math.sin(sigma)
+        cos_sigma = math.cos(sigma)
+
+        delta_sigma = (
+            B
+            * sin_sigma
+            * (
+                cos_2sigma_m
+                + B
+                / 4.0
+                * (
+                    cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2)
+                    - B
+                    / 6.0
+                    * cos_2sigma_m
+                    * (-3.0 + 4.0 * sin_sigma**2)
+                    * (-3.0 + 4.0 * cos_2sigma_m**2)
+                )
+            )
+        )
+        sigma_prev = sigma
+        sigma = distance_m / (b * A) + delta_sigma
+        if abs(sigma - sigma_prev) < convergence_threshold:
+            converged = True
+            break
+
+    if not converged:
+        return (math.nan, math.nan)
+
+    sin_sigma = math.sin(sigma)
+    cos_sigma = math.cos(sigma)
+    cos_2sigma_m = math.cos(2.0 * sigma1 + sigma)
+
+    lat2 = math.atan2(
+        sin_u1 * cos_sigma + cos_u1 * sin_sigma * cos_alpha1,
+        (1.0 - f)
+        * math.sqrt(
+            sin_alpha**2 + (sin_u1 * sin_sigma - cos_u1 * cos_sigma * cos_alpha1) ** 2
+        ),
+    )
+
+    lam = math.atan2(
+        sin_sigma * sin_alpha1,
+        cos_u1 * cos_sigma - sin_u1 * sin_sigma * cos_alpha1,
+    )
+
+    c = f / 16.0 * cos_sq_alpha * (4.0 + f * (4.0 - 3.0 * cos_sq_alpha))
+    L = lam - (1.0 - c) * f * sin_alpha * (
+        sigma
+        + c
+        * sin_sigma
+        * (cos_2sigma_m + c * cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2))
+    )
+
+    lon2 = math.radians(point[1]) + L
+
+    return (math.degrees(lat2), math.degrees(lon2))
+
+
+@jit(nopython=True, fastmath=True, cache=True)
 def great_circle(u, v):
     """
     Calculate the surface distance between two points on the WGS84 ellipsoid

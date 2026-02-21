@@ -29,10 +29,14 @@ to alternative methods for computing geodesic distance
   [doi:10.1007/s00190-012-0578-z](https://doi.org/10.1007/s00190-012-0578-z).
 """
 
+import math
+
 import numpy as np
 
 from .geodesic import (
     geodesic_vincenty,
+    geodesic_vincenty_inverse_full,
+    geodesic_vincenty_direct,
     great_circle,
     great_circle_array,
     _vincenty_pdist,
@@ -41,6 +45,8 @@ from .geodesic import (
     _great_circle_pdist,
     _great_circle_cdist,
 )
+
+from geographiclib.geodesic import Geodesic as gglib
 
 
 def _get_conv_factor(metric):
@@ -135,6 +141,352 @@ def geodist(coords1, coords2, metric="meter"):
         [geodesic_vincenty(coords1[i], coords2[i]) for i in range(n_points)]
     )
     return dist * conv_fac
+
+
+# ---------------------------------------------------------------------------
+# Bearing
+# ---------------------------------------------------------------------------
+def bearing(point1, point2):
+    """
+    Compute the initial bearing (forward azimuth) from *point1* to *point2*
+    on the WGS-84 ellipsoid using Vincenty's inverse formula.
+
+    The bearing is measured clockwise from true north and returned in the
+    range **[0, 360)** degrees.
+
+    Parameters:
+        point1 : tuple (latitude, longitude)
+            Starting point in degrees.
+        point2 : tuple (latitude, longitude)
+            Destination point in degrees.
+
+    Returns:
+        float
+            Forward azimuth in degrees (0–360).
+
+    Raises:
+        ValueError: If latitude/longitude values are out of range.
+
+    Examples:
+        >>> bearing((52.5200, 13.4050), (48.8566, 2.3522))   # Berlin → Paris
+        245.58...
+
+        >>> bearing((0.0, 0.0), (0.0, 1.0))                  # due east on the equator
+        90.0...
+    """
+    point1 = tuple(float(x) for x in point1)
+    point2 = tuple(float(x) for x in point2)
+
+    if abs(point1[0]) > 90 or abs(point2[0]) > 90:
+        raise ValueError("Latitude values must be in the range [-90, 90]")
+    if abs(point1[1]) > 180 or abs(point2[1]) > 180:
+        raise ValueError("Longitude values must be in the range [-180, 180]")
+
+    result = geodesic_vincenty_inverse_full(point1, point2)
+    if result[0] < 0:
+        # Vincenty failed to converge – fall back to geographiclib
+        g = gglib.WGS84.Inverse(point1[0], point1[1], point2[0], point2[1])
+        return g["azi1"] % 360.0
+    return result[1]
+
+
+# ---------------------------------------------------------------------------
+# Destination (Vincenty direct)
+# ---------------------------------------------------------------------------
+def destination(point, bearing_deg, distance, metric="meter"):
+    """
+    Compute the destination point given a starting point, initial bearing,
+    and distance along the geodesic on the WGS-84 ellipsoid (Vincenty direct).
+
+    Parameters:
+        point : tuple (latitude, longitude)
+            Starting point in degrees.
+        bearing_deg : float
+            Initial bearing (forward azimuth) in degrees clockwise from north.
+        distance : float
+            Distance to travel in the unit specified by *metric*.
+        metric : str, optional
+            Unit of the *distance* parameter: ``'meter'``, ``'km'``,
+            ``'mile'``, or ``'nmi'``.  Default is ``'meter'``.
+
+    Returns:
+        tuple (latitude, longitude)
+            Destination point in degrees.
+
+    Raises:
+        ValueError: If latitude/longitude values are out of range or metric
+            is unsupported.
+
+    Examples:
+        >>> destination((52.5200, 13.4050), 245.0, 879.0, metric='km')
+        (48.85..., 2.35...)
+
+        >>> destination((0.0, 0.0), 90.0, 111.32, metric='km')
+        (0.0, 1.0...)
+    """
+    point = tuple(float(x) for x in point)
+
+    if abs(point[0]) > 90:
+        raise ValueError("Latitude values must be in the range [-90, 90]")
+    if abs(point[1]) > 180:
+        raise ValueError("Longitude values must be in the range [-180, 180]")
+
+    conv_fac = _get_conv_factor(metric)
+    distance_m = float(distance) / conv_fac  # convert to meters
+
+    lat, lon = geodesic_vincenty_direct(point, float(bearing_deg), distance_m)
+    if math.isnan(lat):
+        # Vincenty direct failed to converge – fall back to geographiclib
+        g = gglib.WGS84.Direct(point[0], point[1], float(bearing_deg), distance_m)
+        lat, lon = g["lat2"], g["lon2"]
+    # Normalise longitude to [-180, 180]
+    lon = ((lon + 180.0) % 360.0) - 180.0
+    return (lat, lon)
+
+
+# ---------------------------------------------------------------------------
+# Interpolation / midpoint along a geodesic
+# ---------------------------------------------------------------------------
+def interpolate(point1, point2, n_points=1):
+    """
+    Return evenly-spaced waypoints along the geodesic from *point1* to
+    *point2* on the WGS-84 ellipsoid.
+
+    When ``n_points=1`` the function returns the **midpoint**.  For
+    ``n_points=N`` it returns *N* interior points that divide the geodesic
+    into *N + 1* equal-length segments (the endpoints are **not** included).
+
+    The implementation uses Vincenty's inverse formula to obtain the total
+    distance and forward azimuth, then repeatedly applies Vincenty's direct
+    formula to step along the geodesic.
+
+    Parameters:
+        point1 : tuple (latitude, longitude)
+            Start point in degrees.
+        point2 : tuple (latitude, longitude)
+            End point in degrees.
+        n_points : int, optional
+            Number of interior waypoints to return.  Default is ``1``
+            (midpoint only).
+
+    Returns:
+        list of tuples [(lat, lon), ...]
+            The waypoints in degrees, ordered from *point1* towards *point2*.
+            The length of the list equals *n_points*.
+
+    Raises:
+        ValueError: If *n_points* < 1 or coordinates are out of range.
+
+    Examples:
+        >>> interpolate((0.0, 0.0), (0.0, 10.0), n_points=1)
+        [(0.0, 5.0...)]
+
+        >>> interpolate((0.0, 0.0), (0.0, 10.0), n_points=4)
+        [(0.0, 2.0...), (0.0, 4.0...), (0.0, 6.0...), (0.0, 8.0...)]
+    """
+    if n_points < 1:
+        raise ValueError("n_points must be >= 1")
+
+    point1 = tuple(float(x) for x in point1)
+    point2 = tuple(float(x) for x in point2)
+
+    if abs(point1[0]) > 90 or abs(point2[0]) > 90:
+        raise ValueError("Latitude values must be in the range [-90, 90]")
+    if abs(point1[1]) > 180 or abs(point2[1]) > 180:
+        raise ValueError("Longitude values must be in the range [-180, 180]")
+
+    # Get total distance and forward azimuth via Vincenty inverse
+    result = geodesic_vincenty_inverse_full(point1, point2)
+    if result[0] < 0:
+        # fallback to geographiclib
+        g = gglib.WGS84.Inverse(point1[0], point1[1], point2[0], point2[1])
+        total_dist = g["s12"]
+        fwd_az = g["azi1"]
+    elif result[0] == 0.0:
+        # Coincident points
+        return [point1] * n_points
+    else:
+        total_dist = result[0]
+        fwd_az = result[1]
+
+    segment = total_dist / (n_points + 1)
+    waypoints = []
+    for i in range(1, n_points + 1):
+        lat, lon = geodesic_vincenty_direct(point1, fwd_az, segment * i)
+        if math.isnan(lat):
+            # Vincenty direct failed to converge – fall back to geographiclib
+            g = gglib.WGS84.Direct(point1[0], point1[1], fwd_az, segment * i)
+            lat, lon = g["lat2"], g["lon2"]
+        lon = ((lon + 180.0) % 360.0) - 180.0
+        waypoints.append((lat, lon))
+
+    return waypoints
+
+
+def midpoint(point1, point2):
+    """
+    Return the geodesic midpoint between two points on the WGS-84 ellipsoid.
+
+    This is a convenience wrapper around :func:`interpolate` with
+    ``n_points=1``.
+
+    Parameters:
+        point1 : tuple (latitude, longitude)
+            First point in degrees.
+        point2 : tuple (latitude, longitude)
+            Second point in degrees.
+
+    Returns:
+        tuple (latitude, longitude)
+            Midpoint in degrees.
+
+    Examples:
+        >>> midpoint((0.0, 0.0), (0.0, 10.0))
+        (0.0, 5.0...)
+    """
+    return interpolate(point1, point2, n_points=1)[0]
+
+
+# ---------------------------------------------------------------------------
+# Point-in-radius
+# ---------------------------------------------------------------------------
+def point_in_radius(center, candidates, radius, metric="meter"):
+    """
+    Find all *candidate* points that lie within a given geodesic radius
+    of a *center* point on the WGS-84 ellipsoid.
+
+    Useful for geofencing, store-locator queries, and spatial filtering.
+
+    Parameters:
+        center : tuple (latitude, longitude)
+            Reference point in degrees.
+        candidates : array-like, shape (n, 2)
+            Array of candidate points ``[(lat, lon), ...]``.
+        radius : float
+            Radius threshold in the unit specified by *metric*.
+        metric : str, optional
+            Unit for *radius*: ``'meter'``, ``'km'``, ``'mile'``, or
+            ``'nmi'``.  Default is ``'meter'``.
+
+    Returns:
+        tuple (indices, distances)
+            *indices* : ndarray of int — indices into *candidates* of points
+            that fall within the radius.
+            *distances* : ndarray of float — the corresponding distances in
+            the requested *metric*.
+
+    Raises:
+        ValueError: If coordinates are out of range, radius is negative,
+            or metric is unsupported.
+
+    Examples:
+        >>> pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+        >>> idx, dists = point_in_radius((52.5200, 13.4050), pts, 1000, metric='km')
+        >>> idx
+        array([0, 2])
+    """
+    if radius < 0:
+        raise ValueError("radius must be non-negative")
+
+    conv_fac = _get_conv_factor(metric)
+    center = tuple(float(x) for x in center)
+
+    if abs(center[0]) > 90:
+        raise ValueError("Latitude values must be in the range [-90, 90]")
+    if abs(center[1]) > 180:
+        raise ValueError("Longitude values must be in the range [-180, 180]")
+
+    candidates = np.asarray(candidates, dtype=np.float64)
+    if candidates.ndim != 2 or candidates.shape[1] != 2:
+        raise ValueError("candidates must have shape (n, 2)")
+
+    # Compute distances from center to each candidate (in meters)
+    center_arr = np.ascontiguousarray(
+        np.tile(center, (len(candidates), 1)), dtype=np.float64
+    )
+    dists_m = np.array(
+        [
+            geodesic_vincenty(center_arr[i], candidates[i])
+            for i in range(len(candidates))
+        ]
+    )
+    dists = dists_m * conv_fac
+
+    mask = dists <= radius
+    return np.where(mask)[0], dists[mask]
+
+
+# ---------------------------------------------------------------------------
+# k-Nearest Neighbours on geodesic distance
+# ---------------------------------------------------------------------------
+def geodesic_knn(point, candidates, k=1, metric="meter"):
+    """
+    Find the *k* nearest neighbours to *point* among *candidates* using
+    exact geodesic (Vincenty) distances on the WGS-84 ellipsoid.
+
+    This fills the gap left by ``sklearn.neighbors.BallTree`` which only
+    supports the haversine (spherical) metric.
+
+    Parameters:
+        point : tuple (latitude, longitude)
+            Query point in degrees.
+        candidates : array-like, shape (n, 2)
+            Array of candidate points ``[(lat, lon), ...]``.
+        k : int, optional
+            Number of nearest neighbours to return.  Default is ``1``.
+        metric : str, optional
+            Unit for the returned distances: ``'meter'``, ``'km'``,
+            ``'mile'``, or ``'nmi'``.  Default is ``'meter'``.
+
+    Returns:
+        tuple (indices, distances)
+            *indices* : ndarray of int, shape (k,) — indices into
+            *candidates* of the *k* closest points, ordered nearest-first.
+            *distances* : ndarray of float, shape (k,) — the corresponding
+            distances in the requested *metric*.
+
+    Raises:
+        ValueError: If *k* < 1 or coordinates are out of range.
+
+    Examples:
+        >>> pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+        >>> idx, dists = geodesic_knn((52.5200, 13.4050), pts, k=2, metric='km')
+        >>> idx
+        array([0, 2])
+    """
+    if k < 1:
+        raise ValueError("k must be >= 1")
+
+    conv_fac = _get_conv_factor(metric)
+    point = tuple(float(x) for x in point)
+
+    if abs(point[0]) > 90:
+        raise ValueError("Latitude values must be in the range [-90, 90]")
+    if abs(point[1]) > 180:
+        raise ValueError("Longitude values must be in the range [-180, 180]")
+
+    candidates = np.asarray(candidates, dtype=np.float64)
+    if candidates.ndim != 2 or candidates.shape[1] != 2:
+        raise ValueError("candidates must have shape (n, 2)")
+
+    n = len(candidates)
+    if k > n:
+        raise ValueError(f"k={k} is greater than the number of candidates ({n})")
+
+    dists_m = np.array(
+        [geodesic_vincenty(point, tuple(candidates[i])) for i in range(n)]
+    )
+    dists = dists_m * conv_fac
+
+    # Partial sort to find k smallest
+    if k == n:
+        order = np.argsort(dists)
+    else:
+        order = np.argpartition(dists, k)[:k]
+        # Sort those k by distance
+        order = order[np.argsort(dists[order])]
+
+    return order, dists[order]
 
 
 def geodist_matrix(coords1, coords2=None, metric="meter"):

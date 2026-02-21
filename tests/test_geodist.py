@@ -3,11 +3,24 @@
 import numpy as np
 import pytest
 
-from geodistpy import geodist, geodist_matrix, greatcircle, greatcircle_matrix
+from geodistpy import (
+    geodist,
+    geodist_matrix,
+    greatcircle,
+    greatcircle_matrix,
+    bearing,
+    destination,
+    interpolate,
+    midpoint,
+    point_in_radius,
+    geodesic_knn,
+)
 from geodistpy.distance import _get_conv_factor
 from geodistpy.geodesic import (
     geodesic_vincenty_inverse,
     geodesic_vincenty,
+    geodesic_vincenty_inverse_full,
+    geodesic_vincenty_direct,
     great_circle,
     great_circle_array,
     geodist_dimwise,
@@ -517,3 +530,442 @@ def test_geodist_matrix_matches_pairwise():
         for j, c2 in enumerate(coords):
             expected = geodist(c1, c2, metric="meter")
             assert mat[i, j] == pytest.approx(expected, rel=1e-6)
+
+
+# ===========================================================================
+# NEW FEATURES — bearing, destination, interpolate/midpoint,
+#                point_in_radius, geodesic_knn
+# ===========================================================================
+
+
+# ---------------------------------------------------------------------------
+# Low-level: geodesic_vincenty_inverse_full
+# ---------------------------------------------------------------------------
+def test_vincenty_inverse_full_distance_matches():
+    """Distance from the full variant must match the distance-only variant."""
+    p1 = (52.5200, 13.4050)
+    p2 = (48.8566, 2.3522)
+    d_only = geodesic_vincenty_inverse(p1, p2)
+    d_full, fwd, back = geodesic_vincenty_inverse_full(p1, p2)
+    assert d_full == pytest.approx(d_only, rel=1e-10)
+
+
+def test_vincenty_inverse_full_coincident():
+    """Coincident points → distance=0, azimuths=0."""
+    d, fwd, back = geodesic_vincenty_inverse_full((10.0, 20.0), (10.0, 20.0))
+    assert d == 0.0
+    assert fwd == 0.0
+    assert back == 0.0
+
+
+def test_vincenty_inverse_full_due_east():
+    """Moving due east on the equator → forward azimuth ~90°."""
+    d, fwd, back = geodesic_vincenty_inverse_full((0.0, 0.0), (0.0, 1.0))
+    assert fwd == pytest.approx(90.0, abs=0.01)
+
+
+def test_vincenty_inverse_full_due_north():
+    """Moving due north → forward azimuth ~0°."""
+    d, fwd, back = geodesic_vincenty_inverse_full((0.0, 0.0), (1.0, 0.0))
+    assert fwd == pytest.approx(0.0, abs=0.01)
+
+
+def test_vincenty_inverse_full_azimuth_range():
+    """Azimuths must be in [0, 360)."""
+    _, fwd, back = geodesic_vincenty_inverse_full((52.5200, 13.4050), (48.8566, 2.3522))
+    assert 0.0 <= fwd < 360.0
+    assert 0.0 <= back < 360.0
+
+
+# ---------------------------------------------------------------------------
+# Low-level: geodesic_vincenty_direct
+# ---------------------------------------------------------------------------
+def test_vincenty_direct_roundtrip():
+    """Inverse → Direct roundtrip: start + bearing + distance → end point."""
+    p1 = (52.5200, 13.4050)
+    p2 = (48.8566, 2.3522)
+    d, fwd, _ = geodesic_vincenty_inverse_full(p1, p2)
+    lat, lon = geodesic_vincenty_direct(p1, fwd, d)
+    assert lat == pytest.approx(p2[0], abs=1e-5)
+    assert lon == pytest.approx(p2[1], abs=1e-5)
+
+
+def test_vincenty_direct_zero_distance():
+    """Zero distance should return the starting point."""
+    lat, lon = geodesic_vincenty_direct((52.5200, 13.4050), 90.0, 0.0)
+    assert lat == pytest.approx(52.5200, abs=1e-8)
+    assert lon == pytest.approx(13.4050, abs=1e-8)
+
+
+def test_vincenty_direct_due_east_equator():
+    """111.32 km east on equator ≈ 1° longitude shift."""
+    lat, lon = geodesic_vincenty_direct((0.0, 0.0), 90.0, 111_320.0)
+    assert lat == pytest.approx(0.0, abs=0.01)
+    assert lon == pytest.approx(1.0, abs=0.01)
+
+
+def test_vincenty_direct_due_north():
+    """~111 km north from equator ≈ 1° latitude shift."""
+    lat, lon = geodesic_vincenty_direct((0.0, 0.0), 0.0, 110_574.0)
+    assert lat == pytest.approx(1.0, abs=0.01)
+    assert lon == pytest.approx(0.0, abs=0.01)
+
+
+# ---------------------------------------------------------------------------
+# bearing
+# ---------------------------------------------------------------------------
+def test_bearing_due_east():
+    """Due east on the equator → bearing ~90°."""
+    b = bearing((0.0, 0.0), (0.0, 1.0))
+    assert b == pytest.approx(90.0, abs=0.01)
+
+
+def test_bearing_due_north():
+    """Due north → bearing ~0°."""
+    b = bearing((0.0, 0.0), (1.0, 0.0))
+    assert b == pytest.approx(0.0, abs=0.01)
+
+
+def test_bearing_due_south():
+    """Due south → bearing ~180°."""
+    b = bearing((1.0, 0.0), (0.0, 0.0))
+    assert b == pytest.approx(180.0, abs=0.01)
+
+
+def test_bearing_due_west():
+    """Due west on the equator → bearing ~270°."""
+    b = bearing((0.0, 1.0), (0.0, 0.0))
+    assert b == pytest.approx(270.0, abs=0.01)
+
+
+def test_bearing_berlin_paris():
+    """Berlin → Paris bearing should be roughly southwest (~245°)."""
+    b = bearing((52.5200, 13.4050), (48.8566, 2.3522))
+    assert 240.0 < b < 250.0
+
+
+def test_bearing_coincident():
+    """Coincident points → bearing = 0."""
+    b = bearing((52.5200, 13.4050), (52.5200, 13.4050))
+    assert b == pytest.approx(0.0, abs=1e-8)
+
+
+def test_bearing_range():
+    """Bearing must be in [0, 360)."""
+    b = bearing((52.5200, 13.4050), (48.8566, 2.3522))
+    assert 0.0 <= b < 360.0
+
+
+def test_bearing_invalid_latitude():
+    """ValueError for latitude out of range."""
+    with pytest.raises(ValueError):
+        bearing((95.0, 0.0), (0.0, 0.0))
+
+
+def test_bearing_invalid_longitude():
+    """ValueError for longitude out of range."""
+    with pytest.raises(ValueError):
+        bearing((0.0, 200.0), (0.0, 0.0))
+
+
+def test_bearing_symmetry_not_equal():
+    """A→B bearing ≠ B→A bearing in general (they differ by ~180° mod 360)."""
+    b_ab = bearing((52.5200, 13.4050), (48.8566, 2.3522))
+    b_ba = bearing((48.8566, 2.3522), (52.5200, 13.4050))
+    # They should not be equal
+    assert abs(b_ab - b_ba) > 1.0
+    # But they should be roughly 180° apart (on a great circle, not exact)
+    diff = abs(b_ab - b_ba)
+    assert 170.0 < diff < 190.0 or 170.0 < (360.0 - diff) < 190.0
+
+
+# ---------------------------------------------------------------------------
+# destination
+# ---------------------------------------------------------------------------
+def test_destination_roundtrip():
+    """destination(A, bearing(A,B), dist(A,B)) ≈ B."""
+    a = (52.5200, 13.4050)
+    b = (48.8566, 2.3522)
+    b_deg = bearing(a, b)
+    d = geodist(a, b, metric="km")
+    lat, lon = destination(a, b_deg, d, metric="km")
+    assert lat == pytest.approx(b[0], abs=1e-4)
+    assert lon == pytest.approx(b[1], abs=1e-4)
+
+
+def test_destination_zero_distance():
+    """Zero distance returns the starting point."""
+    lat, lon = destination((52.5200, 13.4050), 90.0, 0.0)
+    assert lat == pytest.approx(52.5200, abs=1e-8)
+    assert lon == pytest.approx(13.4050, abs=1e-8)
+
+
+def test_destination_due_east_km():
+    """~111 km east on the equator ≈ 1° longitude."""
+    lat, lon = destination((0.0, 0.0), 90.0, 111.32, metric="km")
+    assert lat == pytest.approx(0.0, abs=0.01)
+    assert lon == pytest.approx(1.0, abs=0.01)
+
+
+def test_destination_metric_mile():
+    """Verify mile metric works."""
+    lat1, lon1 = destination((0.0, 0.0), 0.0, 100, metric="mile")
+    lat2, lon2 = destination((0.0, 0.0), 0.0, 100 * 1.609344, metric="km")
+    assert lat1 == pytest.approx(lat2, abs=1e-5)
+    assert lon1 == pytest.approx(lon2, abs=1e-5)
+
+
+def test_destination_invalid_latitude():
+    """ValueError for invalid latitude."""
+    with pytest.raises(ValueError):
+        destination((95.0, 0.0), 90.0, 100.0)
+
+
+def test_destination_invalid_longitude():
+    """ValueError for invalid longitude."""
+    with pytest.raises(ValueError):
+        destination((0.0, 200.0), 90.0, 100.0)
+
+
+def test_destination_longitude_normalisation():
+    """Destination longitude should be normalised to [-180, 180]."""
+    # Travel far east past the antimeridian
+    _, lon = destination((0.0, 170.0), 90.0, 2000, metric="km")
+    assert -180.0 <= lon <= 180.0
+
+
+# ---------------------------------------------------------------------------
+# interpolate & midpoint
+# ---------------------------------------------------------------------------
+def test_midpoint_equator():
+    """Midpoint of two equatorial points is at the midpoint longitude."""
+    mid = midpoint((0.0, 0.0), (0.0, 10.0))
+    assert mid[0] == pytest.approx(0.0, abs=0.01)
+    assert mid[1] == pytest.approx(5.0, abs=0.05)
+
+
+def test_midpoint_same_point():
+    """Midpoint of identical points is the point itself."""
+    mid = midpoint((52.5200, 13.4050), (52.5200, 13.4050))
+    assert mid[0] == pytest.approx(52.5200, abs=1e-8)
+    assert mid[1] == pytest.approx(13.4050, abs=1e-8)
+
+
+def test_midpoint_symmetric():
+    """Midpoint(A,B) ≈ Midpoint(B,A)."""
+    a = (52.5200, 13.4050)
+    b = (48.8566, 2.3522)
+    m1 = midpoint(a, b)
+    m2 = midpoint(b, a)
+    assert m1[0] == pytest.approx(m2[0], abs=1e-5)
+    assert m1[1] == pytest.approx(m2[1], abs=1e-5)
+
+
+def test_midpoint_equidistant():
+    """Midpoint should be equidistant from both endpoints."""
+    a = (52.5200, 13.4050)
+    b = (48.8566, 2.3522)
+    m = midpoint(a, b)
+    d_am = geodist(a, m, metric="meter")
+    d_mb = geodist(m, b, metric="meter")
+    assert d_am == pytest.approx(d_mb, rel=1e-3)
+
+
+def test_interpolate_single_is_midpoint():
+    """interpolate with n_points=1 must equal midpoint."""
+    a = (52.5200, 13.4050)
+    b = (48.8566, 2.3522)
+    pts = interpolate(a, b, n_points=1)
+    m = midpoint(a, b)
+    assert len(pts) == 1
+    assert pts[0][0] == pytest.approx(m[0], abs=1e-8)
+    assert pts[0][1] == pytest.approx(m[1], abs=1e-8)
+
+
+def test_interpolate_multiple_count():
+    """interpolate(n_points=4) returns exactly 4 waypoints."""
+    pts = interpolate((0.0, 0.0), (0.0, 10.0), n_points=4)
+    assert len(pts) == 4
+
+
+def test_interpolate_multiple_equispaced():
+    """Waypoints should be roughly equispaced along the geodesic."""
+    a = (0.0, 0.0)
+    b = (0.0, 10.0)
+    pts = interpolate(a, b, n_points=4)
+    # Each segment should be ~1/5 of total distance
+    total = geodist(a, b, metric="km")
+    all_pts = [a] + pts + [b]
+    for i in range(len(all_pts) - 1):
+        seg = geodist(all_pts[i], all_pts[i + 1], metric="km")
+        assert seg == pytest.approx(total / 5.0, rel=0.01)
+
+
+def test_interpolate_ordered():
+    """Waypoints should be ordered from point1 towards point2."""
+    a = (0.0, 0.0)
+    b = (0.0, 10.0)
+    pts = interpolate(a, b, n_points=3)
+    lons = [p[1] for p in pts]
+    assert lons == sorted(lons)
+
+
+def test_interpolate_invalid_n_points():
+    """ValueError for n_points < 1."""
+    with pytest.raises(ValueError):
+        interpolate((0.0, 0.0), (0.0, 10.0), n_points=0)
+
+
+def test_interpolate_invalid_coords():
+    """ValueError for out-of-range coordinates."""
+    with pytest.raises(ValueError):
+        interpolate((95.0, 0.0), (0.0, 0.0))
+
+
+# ---------------------------------------------------------------------------
+# point_in_radius
+# ---------------------------------------------------------------------------
+def test_point_in_radius_basic():
+    """Paris and London are within 1000 km of Berlin; New York is not."""
+    pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+    idx, dists = point_in_radius((52.5200, 13.4050), pts, 1000, metric="km")
+    assert 0 in idx  # Paris ~880 km
+    assert 2 in idx  # London ~930 km
+    assert 1 not in idx  # New York ~6400 km
+
+
+def test_point_in_radius_none_inside():
+    """No points within a very small radius."""
+    pts = [(48.8566, 2.3522), (40.7128, -74.006)]
+    idx, dists = point_in_radius((52.5200, 13.4050), pts, 1.0, metric="km")
+    assert len(idx) == 0
+    assert len(dists) == 0
+
+
+def test_point_in_radius_all_inside():
+    """All points within a very large radius."""
+    pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+    idx, dists = point_in_radius((52.5200, 13.4050), pts, 100000, metric="km")
+    assert len(idx) == 3
+
+
+def test_point_in_radius_distances_correct():
+    """Returned distances should match individual geodist calls."""
+    center = (52.5200, 13.4050)
+    pts = [(48.8566, 2.3522), (51.5074, -0.1278)]
+    idx, dists = point_in_radius(center, pts, 1000, metric="km")
+    for i_pos, i_orig in enumerate(idx):
+        expected = geodist(center, pts[i_orig], metric="km")
+        assert dists[i_pos] == pytest.approx(expected, rel=1e-6)
+
+
+def test_point_in_radius_boundary():
+    """A point exactly on the radius boundary should be included (<=)."""
+    center = (0.0, 0.0)
+    pts = [(0.0, 1.0)]
+    d = geodist(center, pts[0], metric="km")
+    idx, _ = point_in_radius(center, pts, d, metric="km")
+    assert 0 in idx
+
+
+def test_point_in_radius_invalid_center():
+    """ValueError for invalid center coordinates."""
+    with pytest.raises(ValueError):
+        point_in_radius((95.0, 0.0), [(0.0, 0.0)], 100)
+
+
+def test_point_in_radius_wrong_shape():
+    """ValueError for candidates with wrong shape."""
+    with pytest.raises(ValueError):
+        point_in_radius((0.0, 0.0), [(0.0,)], 100)
+
+
+def test_point_in_radius_metric():
+    """Verify metric parameter works for miles."""
+    center = (52.5200, 13.4050)
+    pts = [(48.8566, 2.3522)]
+    idx_km, d_km = point_in_radius(center, pts, 900, metric="km")
+    idx_mi, d_mi = point_in_radius(center, pts, 900 / 1.609344, metric="mile")
+    assert len(idx_km) == len(idx_mi)
+
+
+# ---------------------------------------------------------------------------
+# geodesic_knn
+# ---------------------------------------------------------------------------
+def test_geodesic_knn_basic():
+    """k=2 nearest to Berlin: Paris and London (not New York)."""
+    pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+    idx, dists = geodesic_knn((52.5200, 13.4050), pts, k=2, metric="km")
+    assert len(idx) == 2
+    assert len(dists) == 2
+    # Paris and London should be the two nearest
+    assert set(idx) == {0, 2}
+
+
+def test_geodesic_knn_k1():
+    """k=1 returns the single nearest neighbor."""
+    pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+    idx, dists = geodesic_knn((52.5200, 13.4050), pts, k=1, metric="km")
+    assert len(idx) == 1
+    # Paris (~880 km) is closer than London (~930 km)
+    assert idx[0] == 0
+
+
+def test_geodesic_knn_all():
+    """k=n returns all points sorted by distance."""
+    pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+    idx, dists = geodesic_knn((52.5200, 13.4050), pts, k=3, metric="km")
+    assert len(idx) == 3
+    # Distances should be sorted ascending
+    assert list(dists) == sorted(dists)
+
+
+def test_geodesic_knn_sorted():
+    """Returned results are sorted nearest-first."""
+    pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+    idx, dists = geodesic_knn((52.5200, 13.4050), pts, k=3, metric="km")
+    for i in range(len(dists) - 1):
+        assert dists[i] <= dists[i + 1]
+
+
+def test_geodesic_knn_distances_correct():
+    """Returned distances should match individual geodist calls."""
+    query = (52.5200, 13.4050)
+    pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+    idx, dists = geodesic_knn(query, pts, k=3, metric="km")
+    for i_pos, i_orig in enumerate(idx):
+        expected = geodist(query, pts[i_orig], metric="km")
+        assert dists[i_pos] == pytest.approx(expected, rel=1e-6)
+
+
+def test_geodesic_knn_invalid_k_zero():
+    """ValueError for k < 1."""
+    with pytest.raises(ValueError):
+        geodesic_knn((0.0, 0.0), [(1.0, 1.0)], k=0)
+
+
+def test_geodesic_knn_invalid_k_too_large():
+    """ValueError when k > number of candidates."""
+    with pytest.raises(ValueError):
+        geodesic_knn((0.0, 0.0), [(1.0, 1.0), (2.0, 2.0)], k=5)
+
+
+def test_geodesic_knn_invalid_coords():
+    """ValueError for invalid query point coordinates."""
+    with pytest.raises(ValueError):
+        geodesic_knn((95.0, 0.0), [(1.0, 1.0)], k=1)
+
+
+def test_geodesic_knn_wrong_shape():
+    """ValueError for candidates with wrong shape."""
+    with pytest.raises(ValueError):
+        geodesic_knn((0.0, 0.0), [(0.0,)], k=1)
+
+
+def test_geodesic_knn_metric():
+    """Verify metric parameter is applied correctly."""
+    query = (52.5200, 13.4050)
+    pts = [(48.8566, 2.3522)]
+    _, d_m = geodesic_knn(query, pts, k=1, metric="meter")
+    _, d_km = geodesic_knn(query, pts, k=1, metric="km")
+    assert d_m[0] == pytest.approx(d_km[0] * 1000.0, rel=1e-8)

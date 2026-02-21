@@ -21,8 +21,11 @@ Copyright &copy; 2024-2026 Pawan Jain. Licensed under MIT.
 nav = [
   { "Home" = "index.md" },
   { "Getting Started" = "getting-started.md" },
+  { "Bearing & Destination" = "bearing-destination.md" },
+  { "Interpolation & Midpoints" = "interpolation.md" },
+  { "Spatial Queries" = "spatial-queries.md" },
   { "API Reference" = "api-reference.md" },
-  { "Explanation" = "explanation.md" },
+  { "Benchmarks & Internals" = "explanation.md" },
 ]
 
 # Repository configuration
