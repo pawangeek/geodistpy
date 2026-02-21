@@ -208,7 +208,9 @@ def test_geodist_matrix_wrong_shape():
 def test_greatcircle_wrong_shape():
     """Verify ValueError for greatcircle with wrong number of columns."""
     with pytest.raises(ValueError):
-        greatcircle([(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)], [(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)])
+        greatcircle(
+            [(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)], [(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)]
+        )
 
 
 def test_greatcircle_matrix_wrong_shape():
@@ -296,9 +298,7 @@ def test_greatcircle_matrix_invalid_coords():
 def test_greatcircle_matrix_cdist_invalid_coords2():
     """Verify ValueError for invalid coords2 in greatcircle_matrix cdist mode."""
     with pytest.raises(ValueError):
-        greatcircle_matrix(
-            [(0.0, 0.0), (1.0, 1.0)], [(95.0, 0.0), (0.0, 0.0)]
-        )
+        greatcircle_matrix([(0.0, 0.0), (1.0, 1.0)], [(95.0, 0.0), (0.0, 0.0)])
 
 
 # ---------------------------------------------------------------------------

@@ -350,9 +350,9 @@ def great_circle(u, v):
         return 0.0
 
     # Andoyer-Lambert flattening correction
-    F = (lat1 + lat2) / 2.0   # mean latitude
-    G = (lat1 - lat2) / 2.0   # half latitude difference
-    lam = delta_lng / 2.0      # half longitude difference
+    F = (lat1 + lat2) / 2.0  # mean latitude
+    G = (lat1 - lat2) / 2.0  # half latitude difference
+    lam = delta_lng / 2.0  # half longitude difference
 
     sinF2 = math.sin(F) ** 2
     cosF2 = math.cos(F) ** 2

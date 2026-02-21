@@ -16,16 +16,22 @@ import numpy as np
 # ── Libraries under test ─────────────────────────────────────────────
 from geopy.distance import geodesic as geodesic_geopy
 from geographiclib.geodesic import Geodesic as geodesic_gglib
-from geodistpy.geodesic import geodesic_vincenty, geodesic_vincenty_inverse, great_circle
+from geodistpy.geodesic import (
+    geodesic_vincenty,
+    geodesic_vincenty_inverse,
+    great_circle,
+)
 from geodistpy.distance import geodist, geodist_matrix
 
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def random_coords(n, seed=42):
     rng = np.random.default_rng(seed)
     lats = rng.uniform(-90, 90, n)
     lons = rng.uniform(-180, 180, n)
     return list(zip(lats, lons))
+
 
 def time_func(func, *args, repeats=3, **kwargs):
     times = []
@@ -36,6 +42,7 @@ def time_func(func, *args, repeats=3, **kwargs):
         times.append(t1 - t0)
     return min(times), result
 
+
 def fmt_time(seconds):
     if seconds < 1e-3:
         return f"{seconds*1e6:.1f} µs"
@@ -43,6 +50,7 @@ def fmt_time(seconds):
         return f"{seconds*1e3:.2f} ms"
     else:
         return f"{seconds:.3f} s"
+
 
 # ── Warm-up JIT ─────────────────────────────────────────────────────
 
@@ -64,21 +72,25 @@ print("─" * 80)
 print("TEST 1: Single Pair Distance Computation (best of 3, over 10,000 calls)")
 print("─" * 80)
 
-coord1 = (52.5200, 13.4050)   # Berlin
-coord2 = (48.8566, 2.3522)    # Paris
+coord1 = (52.5200, 13.4050)  # Berlin
+coord2 = (48.8566, 2.3522)  # Paris
 N_single = 10_000
+
 
 def run_geopy_single(n):
     for _ in range(n):
         geodesic_geopy(coord1, coord2).meters
 
+
 def run_gglib_single(n):
     for _ in range(n):
-        geodesic_gglib.WGS84.Inverse(coord1[0], coord1[1], coord2[0], coord2[1])['s12']
+        geodesic_gglib.WGS84.Inverse(coord1[0], coord1[1], coord2[0], coord2[1])["s12"]
+
 
 def run_geodistpy_single(n):
     for _ in range(n):
         geodesic_vincenty(coord1, coord2)
+
 
 t_geopy, _ = time_func(run_geopy_single, N_single, repeats=3)
 t_gglib, _ = time_func(run_gglib_single, N_single, repeats=3)
@@ -87,8 +99,12 @@ t_gdpy, _ = time_func(run_geodistpy_single, N_single, repeats=3)
 print(f"  {'Library':<30} {'Total Time':>12}  {'Per Call':>12}")
 print(f"  {'─'*30} {'─'*12}  {'─'*12}")
 print(f"  {'Geopy':<30} {fmt_time(t_geopy):>12}  {fmt_time(t_geopy/N_single):>12}")
-print(f"  {'Geographiclib':<30} {fmt_time(t_gglib):>12}  {fmt_time(t_gglib/N_single):>12}")
-print(f"  {'Geodistpy (Vincenty+Numba)':<30} {fmt_time(t_gdpy):>12}  {fmt_time(t_gdpy/N_single):>12}")
+print(
+    f"  {'Geographiclib':<30} {fmt_time(t_gglib):>12}  {fmt_time(t_gglib/N_single):>12}"
+)
+print(
+    f"  {'Geodistpy (Vincenty+Numba)':<30} {fmt_time(t_gdpy):>12}  {fmt_time(t_gdpy/N_single):>12}"
+)
 print()
 print(f"  Geodistpy is {t_geopy/t_gdpy:.1f}x faster than Geopy")
 print(f"  Geodistpy is {t_gglib/t_gdpy:.1f}x faster than Geographiclib")
@@ -136,9 +152,15 @@ for N in [50, 100, 200]:
     t_gdpy_m, _ = time_func(run_geodistpy_matrix, repeats=1)
 
     print(f"  {'Geopy':<30} {fmt_time(t_geopy_m):>12}  {'(baseline)':>10}")
-    print(f"  {'Geographiclib':<30} {fmt_time(t_gglib_m):>12}  {t_geopy_m/t_gglib_m:.1f}x")
-    print(f"  {'Geodistpy (matrix)':<30} {fmt_time(t_gdpy_m):>12}  {t_geopy_m/t_gdpy_m:.1f}x")
-    print(f"  → Geodistpy is {t_geopy_m/t_gdpy_m:.0f}x faster than Geopy, {t_gglib_m/t_gdpy_m:.0f}x faster than Geographiclib")
+    print(
+        f"  {'Geographiclib':<30} {fmt_time(t_gglib_m):>12}  {t_geopy_m/t_gglib_m:.1f}x"
+    )
+    print(
+        f"  {'Geodistpy (matrix)':<30} {fmt_time(t_gdpy_m):>12}  {t_geopy_m/t_gdpy_m:.1f}x"
+    )
+    print(
+        f"  → Geodistpy is {t_geopy_m/t_gdpy_m:.0f}x faster than Geopy, {t_gglib_m/t_gdpy_m:.0f}x faster than Geographiclib"
+    )
 
 print()
 
@@ -184,11 +206,19 @@ rel_err_gdpy = err_gdpy / np.maximum(dists_gglib_arr, 1e-10)
 rel_err_geopy = err_geopy / np.maximum(dists_gglib_arr, 1e-10)
 rel_err_gc = err_gc / np.maximum(dists_gglib_arr, 1e-10)
 
-print(f"\n  {'Method':<30} {'Mean Err (m)':>14} {'Max Err (m)':>14} {'Mean Rel Err':>14} {'Max Rel Err':>14}")
+print(
+    f"\n  {'Method':<30} {'Mean Err (m)':>14} {'Max Err (m)':>14} {'Mean Rel Err':>14} {'Max Rel Err':>14}"
+)
 print(f"  {'─'*30} {'─'*14} {'─'*14} {'─'*14} {'─'*14}")
-print(f"  {'Geodistpy (Vincenty)':<30} {err_gdpy.mean():>14.6f} {err_gdpy.max():>14.6f} {rel_err_gdpy.mean():>14.2e} {rel_err_gdpy.max():>14.2e}")
-print(f"  {'Geopy (geodesic)':<30} {err_geopy.mean():>14.6f} {err_geopy.max():>14.6f} {rel_err_geopy.mean():>14.2e} {rel_err_geopy.max():>14.2e}")
-print(f"  {'Geodistpy (Great Circle)':<30} {err_gc.mean():>14.2f} {err_gc.max():>14.2f} {rel_err_gc.mean():>14.2e} {rel_err_gc.max():>14.2e}")
+print(
+    f"  {'Geodistpy (Vincenty)':<30} {err_gdpy.mean():>14.6f} {err_gdpy.max():>14.6f} {rel_err_gdpy.mean():>14.2e} {rel_err_gdpy.max():>14.2e}"
+)
+print(
+    f"  {'Geopy (geodesic)':<30} {err_geopy.mean():>14.6f} {err_geopy.max():>14.6f} {rel_err_geopy.mean():>14.2e} {rel_err_geopy.max():>14.2e}"
+)
+print(
+    f"  {'Geodistpy (Great Circle)':<30} {err_gc.mean():>14.2f} {err_gc.max():>14.2f} {rel_err_gc.mean():>14.2e} {rel_err_gc.max():>14.2e}"
+)
 print()
 
 
@@ -201,22 +231,24 @@ print("TEST 4: Edge Cases & Special Scenarios")
 print("─" * 80)
 
 edge_cases = [
-    ("Same point",               (52.5200, 13.4050), (52.5200, 13.4050)),
-    ("North Pole → South Pole",  (90, 0),            (-90, 0)),
-    ("Antipodal (equator)",      (0, 0),             (0, 180)),
-    ("Near-antipodal",           (0.5, 0),           (-0.5, 179.9)),
-    ("Very short (~1m)",         (52.5200, 13.4050), (52.52001, 13.4050)),
-    ("Along equator (90°)",      (0, 0),             (0, 90)),
-    ("Along meridian (45°)",     (0, 0),             (45, 0)),
-    ("Cross date line",          (0, 179.9),         (0, -179.9)),
-    ("High latitude (Arctic)",   (89.99, 0),         (89.99, 180)),
-    ("Sydney → New York",        (-33.8688, 151.2093), (40.7128, -74.0060)),
-    ("London → Tokyo",           (51.5074, -0.1278), (35.6762, 139.6503)),
-    ("Cape Town → Buenos Aires", (-33.9249, 18.4241),(-34.6037, -58.3816)),
-    ("Mumbai → São Paulo",       (19.0760, 72.8777), (-23.5505, -46.6333)),
+    ("Same point", (52.5200, 13.4050), (52.5200, 13.4050)),
+    ("North Pole → South Pole", (90, 0), (-90, 0)),
+    ("Antipodal (equator)", (0, 0), (0, 180)),
+    ("Near-antipodal", (0.5, 0), (-0.5, 179.9)),
+    ("Very short (~1m)", (52.5200, 13.4050), (52.52001, 13.4050)),
+    ("Along equator (90°)", (0, 0), (0, 90)),
+    ("Along meridian (45°)", (0, 0), (45, 0)),
+    ("Cross date line", (0, 179.9), (0, -179.9)),
+    ("High latitude (Arctic)", (89.99, 0), (89.99, 180)),
+    ("Sydney → New York", (-33.8688, 151.2093), (40.7128, -74.0060)),
+    ("London → Tokyo", (51.5074, -0.1278), (35.6762, 139.6503)),
+    ("Cape Town → Buenos Aires", (-33.9249, 18.4241), (-34.6037, -58.3816)),
+    ("Mumbai → São Paulo", (19.0760, 72.8777), (-23.5505, -46.6333)),
 ]
 
-print(f"\n  {'Scenario':<30} {'Geographiclib':>16} {'Geodistpy':>16} {'Geopy':>16} {'Δ gdpy (m)':>12}")
+print(
+    f"\n  {'Scenario':<30} {'Geographiclib':>16} {'Geodistpy':>16} {'Geopy':>16} {'Δ gdpy (m)':>12}"
+)
 print(f"  {'─'*30} {'─'*16} {'─'*16} {'─'*16} {'─'*12}")
 
 for name, p1, p2 in edge_cases:
@@ -224,7 +256,9 @@ for name, p1, p2 in edge_cases:
     d_gdpy = geodesic_vincenty(p1, p2)
     d_geopy = geodesic_geopy(p1, p2).meters
     delta = abs(d_gdpy - d_ref)
-    print(f"  {name:<30} {d_ref:>16.3f} {d_gdpy:>16.3f} {d_geopy:>16.3f} {delta:>12.6f}")
+    print(
+        f"  {name:<30} {d_ref:>16.3f} {d_gdpy:>16.3f} {d_geopy:>16.3f} {delta:>12.6f}"
+    )
 
 print()
 
@@ -253,7 +287,9 @@ for N in [1_000, 10_000, 50_000]:
 
     if N <= 10_000:
         t_r, _ = time_func(run_gglib, repeats=1)
-        print(f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib={fmt_time(t_r):>10}  Speedup={t_r/t_g:.1f}x")
+        print(
+            f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib={fmt_time(t_r):>10}  Speedup={t_r/t_g:.1f}x"
+        )
     else:
         print(f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib=(skipped)")
 
@@ -272,13 +308,16 @@ N_gc = 10_000
 ca = random_coords(N_gc, seed=300)
 cb = random_coords(N_gc, seed=400)
 
+
 def run_gc():
     for i in range(N_gc):
         great_circle(ca[i], cb[i])
 
+
 def run_vin():
     for i in range(N_gc):
         geodesic_vincenty(ca[i], cb[i])
+
 
 t_gc, _ = time_func(run_gc, repeats=3)
 t_vin, _ = time_func(run_vin, repeats=3)
@@ -290,7 +329,9 @@ print(f"  Great Circle is {t_vin/t_gc:.1f}x faster than Vincenty")
 print()
 print(f"  Accuracy trade-off:")
 print(f"  • Great Circle: mean error = {err_gc.mean():.2f}m, max = {err_gc.max():.2f}m")
-print(f"  • Vincenty:     mean error = {err_gdpy.mean():.6f}m, max = {err_gdpy.max():.6f}m")
+print(
+    f"  • Vincenty:     mean error = {err_gdpy.mean():.6f}m, max = {err_gdpy.max():.6f}m"
+)
 print()
 
 
