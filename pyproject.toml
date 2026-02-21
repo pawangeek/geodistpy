@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "geodistpy"
-version = "0.2.1"
+version = "1.0.1"
 description = "For fast geodesic calculations"
 authors = ["Pawan <pawanjain.432@gmail.com>"]
 license = "MIT"
