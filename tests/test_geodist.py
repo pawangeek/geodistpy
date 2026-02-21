@@ -163,6 +163,60 @@ def test_geodist_matrix_invalid_coords():
         geodist_matrix([(95.0, 0.0), (0.0, 0.0)])
 
 
+def test_geodist_multi_invalid_latitude():
+    """Verify ValueError for out-of-range latitude in multi-point geodist."""
+    with pytest.raises(ValueError):
+        geodist([(95.0, 0.0), (0.0, 0.0)], [(0.0, 0.0), (0.0, 0.0)])
+
+
+def test_geodist_multi_invalid_longitude():
+    """Verify ValueError for out-of-range longitude in multi-point geodist."""
+    with pytest.raises(ValueError):
+        geodist([(0.0, 200.0), (0.0, 0.0)], [(0.0, 0.0), (0.0, 0.0)])
+
+
+def test_geodist_multi_wrong_shape():
+    """Verify ValueError when coords have wrong number of columns."""
+    with pytest.raises((ValueError, AssertionError)):
+        geodist([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)])
+
+
+def test_geodist_matrix_cdist_invalid_coords2():
+    """Verify ValueError for invalid coords2 in cdist mode."""
+    with pytest.raises(ValueError):
+        geodist_matrix([(0.0, 0.0), (1.0, 1.0)], [(95.0, 0.0), (0.0, 0.0)])
+
+
+def test_geodist_single_point_wrong_shape():
+    """Verify ValueError for single point with wrong array shape."""
+    with pytest.raises(ValueError):
+        geodist([[52.5, 13.4]], [[48.8, 2.3]])
+
+
+def test_geodist_single_point_invalid_longitude_only():
+    """Verify ValueError for single point with valid lat but invalid lon."""
+    with pytest.raises(ValueError):
+        geodist((52.5, 190.0), (48.8, 2.3))
+
+
+def test_geodist_matrix_wrong_shape():
+    """Verify ValueError for matrix input with wrong number of columns."""
+    with pytest.raises((ValueError, IndexError)):
+        geodist_matrix([(0.0,), (1.0,)])
+
+
+def test_greatcircle_wrong_shape():
+    """Verify ValueError for greatcircle with wrong number of columns."""
+    with pytest.raises(ValueError):
+        greatcircle([(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)], [(0.0, 0.0, 0.0), (1.0, 1.0, 1.0)])
+
+
+def test_greatcircle_matrix_wrong_shape():
+    """Verify ValueError for greatcircle_matrix with wrong columns."""
+    with pytest.raises((ValueError, IndexError)):
+        greatcircle_matrix([(0.0,), (1.0,)])
+
+
 # ---------------------------------------------------------------------------
 # greatcircle - single pair
 # ---------------------------------------------------------------------------
@@ -237,6 +291,14 @@ def test_greatcircle_matrix_invalid_coords():
     """Verify ValueError for invalid coordinates in greatcircle_matrix."""
     with pytest.raises(ValueError):
         greatcircle_matrix([(0.0, 200.0), (0.0, 0.0)])
+
+
+def test_greatcircle_matrix_cdist_invalid_coords2():
+    """Verify ValueError for invalid coords2 in greatcircle_matrix cdist mode."""
+    with pytest.raises(ValueError):
+        greatcircle_matrix(
+            [(0.0, 0.0), (1.0, 1.0)], [(95.0, 0.0), (0.0, 0.0)]
+        )
 
 
 # ---------------------------------------------------------------------------
