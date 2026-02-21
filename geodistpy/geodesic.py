@@ -463,7 +463,8 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
 
     Returns:
         (latitude, longitude) : (float, float)
-            Destination point in degrees.
+            Destination point in degrees.  Returns ``(nan, nan)`` if the
+            iteration fails to converge.
 
     References:
         Vincenty, T. (1975). "Direct and inverse solutions of geodesics on the
@@ -497,6 +498,7 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
 
     sigma = distance_m / (b * A)
 
+    converged = False
     for _iteration in range(max_iterations):
         cos_2sigma_m = math.cos(2.0 * sigma1 + sigma)
         sin_sigma = math.sin(sigma)
@@ -522,7 +524,11 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
         sigma_prev = sigma
         sigma = distance_m / (b * A) + delta_sigma
         if abs(sigma - sigma_prev) < convergence_threshold:
+            converged = True
             break
+
+    if not converged:
+        return (math.nan, math.nan)
 
     sin_sigma = math.sin(sigma)
     cos_sigma = math.cos(sigma)

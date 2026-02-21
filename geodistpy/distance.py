@@ -29,6 +29,8 @@ to alternative methods for computing geodesic distance
   [doi:10.1007/s00190-012-0578-z](https://doi.org/10.1007/s00190-012-0578-z).
 """
 
+import math
+
 import numpy as np
 
 from .geodesic import (
@@ -233,6 +235,10 @@ def destination(point, bearing_deg, distance, metric="meter"):
     distance_m = float(distance) / conv_fac  # convert to meters
 
     lat, lon = geodesic_vincenty_direct(point, float(bearing_deg), distance_m)
+    if math.isnan(lat):
+        # Vincenty direct failed to converge – fall back to geographiclib
+        g = gglib.WGS84.Direct(point[0], point[1], float(bearing_deg), distance_m)
+        lat, lon = g["lat2"], g["lon2"]
     # Normalise longitude to [-180, 180]
     lon = ((lon + 180.0) % 360.0) - 180.0
     return (lat, lon)
@@ -307,6 +313,10 @@ def interpolate(point1, point2, n_points=1):
     waypoints = []
     for i in range(1, n_points + 1):
         lat, lon = geodesic_vincenty_direct(point1, fwd_az, segment * i)
+        if math.isnan(lat):
+            # Vincenty direct failed to converge – fall back to geographiclib
+            g = gglib.WGS84.Direct(point1[0], point1[1], fwd_az, segment * i)
+            lat, lon = g["lat2"], g["lon2"]
         lon = ((lon + 180.0) % 360.0) - 180.0
         waypoints.append((lat, lon))
 
@@ -366,7 +376,8 @@ def point_in_radius(center, candidates, radius, metric="meter"):
             the requested *metric*.
 
     Raises:
-        ValueError: If coordinates are out of range or metric is unsupported.
+        ValueError: If coordinates are out of range, radius is negative,
+            or metric is unsupported.
 
     Examples:
         >>> pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
@@ -374,6 +385,9 @@ def point_in_radius(center, candidates, radius, metric="meter"):
         >>> idx
         array([0, 2])
     """
+    if radius < 0:
+        raise ValueError("radius must be non-negative")
+
     conv_fac = _get_conv_factor(metric)
     center = tuple(float(x) for x in center)
 
