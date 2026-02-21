@@ -275,9 +275,7 @@ def test_great_circle_quarter_circumference():
 # Low-level: great_circle_array (numpy-based)
 # ---------------------------------------------------------------------------
 def test_great_circle_array_single():
-    d = great_circle_array(
-        np.array([52.5200, 13.4050]), np.array([48.8566, 2.3522])
-    )
+    d = great_circle_array(np.array([52.5200, 13.4050]), np.array([48.8566, 2.3522]))
     assert d > 870_000 and d < 890_000
 
 
@@ -386,7 +384,7 @@ def test_conv_factor_values():
 
 def test_conv_factor_invalid():
     with pytest.raises(ValueError):
-        _get_conv_factor("lightyear")
+        _get_conv_factor("invalid_metric")
 
 
 # ---------------------------------------------------------------------------
