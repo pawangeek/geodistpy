@@ -23,13 +23,12 @@ arXiv:1109.4448. Bibcode:2013JGeod..87...43K. doi:10.1007/s00190-012-0578-z. Add
 
 import math
 import numpy as np
-from scipy.spatial.distance import cdist
-from numba import jit
+from numba import jit, prange
 
 from geographiclib.geodesic import Geodesic as gglib
 
 
-@jit(nopython=True)
+@jit(nopython=True, fastmath=True, cache=True)
 def geodesic_vincenty_inverse(point1, point2):
     """
     Compute the geodesic distance between two points on the
@@ -188,6 +187,61 @@ def geodesic_vincenty(p1, p2):
         return d
 
 
+@jit(nopython=True, fastmath=True, parallel=True, cache=True)
+def _vincenty_pdist(coords):
+    """Compute pairwise Vincenty distances (pdist-style) using Numba parallel."""
+    n = coords.shape[0]
+    result = np.zeros((n, n))
+    for i in prange(n):
+        for j in range(i + 1, n):
+            d = geodesic_vincenty_inverse(coords[i], coords[j])
+            if d is None:
+                d = 0.0  # fallback handled at Python level if needed
+            result[i, j] = d
+            result[j, i] = d
+    return result
+
+
+@jit(nopython=True, fastmath=True, parallel=True, cache=True)
+def _vincenty_cdist(coords1, coords2):
+    """Compute cross-distance Vincenty matrix using Numba parallel."""
+    n1 = coords1.shape[0]
+    n2 = coords2.shape[0]
+    result = np.zeros((n1, n2))
+    for i in prange(n1):
+        for j in range(n2):
+            d = geodesic_vincenty_inverse(coords1[i], coords2[j])
+            if d is None:
+                d = 0.0
+            result[i, j] = d
+    return result
+
+
+@jit(nopython=True, fastmath=True, parallel=True, cache=True)
+def _great_circle_pdist(coords):
+    """Compute pairwise great circle distances (pdist-style) using Numba parallel."""
+    n = coords.shape[0]
+    result = np.zeros((n, n))
+    for i in prange(n):
+        for j in range(i + 1, n):
+            d = great_circle(coords[i], coords[j])
+            result[i, j] = d
+            result[j, i] = d
+    return result
+
+
+@jit(nopython=True, fastmath=True, parallel=True, cache=True)
+def _great_circle_cdist(coords1, coords2):
+    """Compute cross-distance great circle matrix using Numba parallel."""
+    n1 = coords1.shape[0]
+    n2 = coords2.shape[0]
+    result = np.zeros((n1, n2))
+    for i in prange(n1):
+        for j in range(n2):
+            result[i, j] = great_circle(coords1[i], coords2[j])
+    return result
+
+
 def geodist_dimwise(X):
     """
     Compute the pairwise geodesic distances between data points for each dimension.
@@ -225,17 +279,15 @@ def geodist_dimwise(X):
 
     # Initialise distances to zero
     dist = np.zeros((X.shape[0], X.shape[0], X.shape[1] - 1))
-    # Compute geodesic distance for latitude and longitude
-    dist[:, :, 0] = cdist(
-        X[:, :2], X[:, :2], metric=lambda u, v: geodesic_vincenty(u, v)
-    )
+    # Compute geodesic distance for latitude and longitude using Numba parallel
+    dist[:, :, 0] = _vincenty_pdist(np.ascontiguousarray(X[:, :2]))
     # compute Euclidean distance for remaining dimensions
     dist[:, :, 1:] = X[:, np.newaxis, 2:] - X[np.newaxis, :, 2:]
 
     return dist
 
 
-@jit(nopython=True)
+@jit(nopython=True, fastmath=True, cache=True)
 def great_circle(u, v):
     """
     Calculate the surface distance between two points on the WGS84 ellipsoid

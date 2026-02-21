@@ -30,9 +30,16 @@ to alternative methods for computing geodesic distance
 """
 
 import numpy as np
-from scipy.spatial.distance import pdist, cdist, squareform
 
-from .geodesic import geodesic_vincenty, great_circle, great_circle_array
+from .geodesic import (
+    geodesic_vincenty,
+    great_circle,
+    great_circle_array,
+    _vincenty_pdist,
+    _vincenty_cdist,
+    _great_circle_pdist,
+    _great_circle_cdist,
+)
 
 
 def _get_conv_factor(metric):
@@ -186,8 +193,7 @@ def geodist_matrix(coords1, coords2=None, metric="meter"):
         )
 
     if coords2 is None:
-        dist = pdist(coords1, metric=lambda u, v: geodesic_vincenty(u, v))
-        dist = squareform(dist)
+        dist = _vincenty_pdist(np.ascontiguousarray(coords1, dtype=np.float64))
     else:
         coords2 = np.asarray(coords2)
 
@@ -197,7 +203,10 @@ def geodist_matrix(coords1, coords2=None, metric="meter"):
             raise ValueError(
                 "Latitude values must be in the range [-90, 90] and Longitude values must be in the range [-180, 180]."
             )
-        dist = cdist(coords1, coords2, metric=lambda u, v: geodesic_vincenty(u, v))
+        dist = _vincenty_cdist(
+            np.ascontiguousarray(coords1, dtype=np.float64),
+            np.ascontiguousarray(coords2, dtype=np.float64),
+        )
     return dist * conv_fac
 
 
@@ -316,8 +325,7 @@ def greatcircle_matrix(coords1, coords2=None, metric="meter"):
 
     if coords2 is None:
         # If only one list of coordinates is given:
-        dist = pdist(coords1, metric=lambda u, v: great_circle(u, v))
-        dist = squareform(dist)
+        dist = _great_circle_pdist(np.ascontiguousarray(coords1, dtype=np.float64))
     else:
         coords2 = np.asarray(coords2)
         assert coords1.shape == coords2.shape
@@ -326,5 +334,8 @@ def greatcircle_matrix(coords1, coords2=None, metric="meter"):
             raise ValueError(
                 "Latitude values must be in the range [-90, 90] and Longitude values must be in the range [-180, 180]."
             )
-        dist = cdist(coords1, coords2, metric=lambda u, v: great_circle(u, v))
+        dist = _great_circle_cdist(
+            np.ascontiguousarray(coords1, dtype=np.float64),
+            np.ascontiguousarray(coords2, dtype=np.float64),
+        )
     return dist * conv_fac

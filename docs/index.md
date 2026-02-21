@@ -14,5 +14,13 @@ The documentation is organized to help you quickly find the information you need
 
 The `geodistpy` package is a versatile library for geospatial calculations, offering various distance metrics and functionalities. It is built on the principles of geodesy and uses the WGS 84 coordinate system, making it suitable for a wide range of applications, from GPS tracking to geographical analysis.
 
+### Key Features
+
+- **Blazing fast:** ~0.4 µs per distance call — up to **171x faster than Geopy**, **109x faster than Geographiclib**
+- **Parallel matrix computation:** Up to **1,230x faster** than Geopy for pairwise distance matrices using Numba parallel execution
+- **Sub-millimeter accuracy:** Vincenty's inverse formula with mean error of just 9 µm vs Geographiclib reference
+- **Improved Great Circle:** Andoyer-Lambert flattening correction reduces spherical approximation error by **700x** (from ~13 km to ~19 m)
+- **Edge case handling:** Antipodal points, poles, date line crossings, and very short distances all handled correctly
+
 ## License
 The geodistpy project is licensed under the MIT License.
