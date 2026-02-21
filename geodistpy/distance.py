@@ -391,7 +391,10 @@ def point_in_radius(center, candidates, radius, metric="meter"):
         np.tile(center, (len(candidates), 1)), dtype=np.float64
     )
     dists_m = np.array(
-        [geodesic_vincenty(center_arr[i], candidates[i]) for i in range(len(candidates))]
+        [
+            geodesic_vincenty(center_arr[i], candidates[i])
+            for i in range(len(candidates))
+        ]
     )
     dists = dists_m * conv_fac
 

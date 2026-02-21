@@ -374,15 +374,14 @@ def geodesic_vincenty_inverse_full(point1, point2):
         sin_lam = math.sin(lam)
         cos_lam = math.cos(lam)
         sin_sigma = math.sqrt(
-            (cos_u2 * sin_lam) ** 2
-            + (cos_u1 * sin_u2 - sin_u1 * cos_u2 * cos_lam) ** 2
+            (cos_u2 * sin_lam) ** 2 + (cos_u1 * sin_u2 - sin_u1 * cos_u2 * cos_lam) ** 2
         )
         if sin_sigma == 0.0:
             return (0.0, 0.0, 0.0)
         cos_sigma = sin_u1 * sin_u2 + cos_u1 * cos_u2 * cos_lam
         sigma = math.atan2(sin_sigma, cos_sigma)
         sin_alpha = cos_u1 * cos_u2 * sin_lam / sin_sigma
-        cos_sq_alpha = 1.0 - sin_alpha ** 2
+        cos_sq_alpha = 1.0 - sin_alpha**2
         if cos_sq_alpha != 0.0:
             cos_2sigma_m = cos_sigma - 2.0 * sin_u1 * sin_u2 / cos_sq_alpha
             c = f / 16.0 * cos_sq_alpha * (4.0 + f * (4.0 - 3.0 * cos_sq_alpha))
@@ -392,9 +391,9 @@ def geodesic_vincenty_inverse_full(point1, point2):
         lam_prev = lam
         lam = l + (1.0 - c) * f * sin_alpha * (
             sigma
-            + c * sin_sigma * (
-                cos_2sigma_m + c * cos_sigma * (-1.0 + 2.0 * cos_2sigma_m ** 2)
-            )
+            + c
+            * sin_sigma
+            * (cos_2sigma_m + c * cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2))
         )
         if abs(lam - lam_prev) < convergence_threshold:
             converged = True
@@ -403,32 +402,44 @@ def geodesic_vincenty_inverse_full(point1, point2):
     if not converged:
         return (-1.0, 0.0, 0.0)  # sentinel: non-convergence
 
-    u_sq = cos_sq_alpha * (a ** 2 - b ** 2) / (b ** 2)
-    A = 1.0 + u_sq / 16384.0 * (4096.0 + u_sq * (-768.0 + u_sq * (320.0 - 175.0 * u_sq)))
+    u_sq = cos_sq_alpha * (a**2 - b**2) / (b**2)
+    A = 1.0 + u_sq / 16384.0 * (
+        4096.0 + u_sq * (-768.0 + u_sq * (320.0 - 175.0 * u_sq))
+    )
     B = u_sq / 1024.0 * (256.0 + u_sq * (-128.0 + u_sq * (74.0 - 47.0 * u_sq)))
     delta_sigma = (
-        B * sin_sigma * (
+        B
+        * sin_sigma
+        * (
             cos_2sigma_m
-            + B / 4.0 * (
-                cos_sigma * (-1.0 + 2.0 * cos_2sigma_m ** 2)
-                - B / 6.0 * cos_2sigma_m
-                * (-3.0 + 4.0 * sin_sigma ** 2)
-                * (-3.0 + 4.0 * cos_2sigma_m ** 2)
+            + B
+            / 4.0
+            * (
+                cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2)
+                - B
+                / 6.0
+                * cos_2sigma_m
+                * (-3.0 + 4.0 * sin_sigma**2)
+                * (-3.0 + 4.0 * cos_2sigma_m**2)
             )
         )
     )
     s = b * A * (sigma - delta_sigma)
 
     # Forward azimuth (point1 → point2)
-    fwd_az = math.degrees(math.atan2(
-        cos_u2 * sin_lam,
-        cos_u1 * sin_u2 - sin_u1 * cos_u2 * cos_lam,
-    ))
+    fwd_az = math.degrees(
+        math.atan2(
+            cos_u2 * sin_lam,
+            cos_u1 * sin_u2 - sin_u1 * cos_u2 * cos_lam,
+        )
+    )
     # Back azimuth (point2 → point1)
-    back_az = math.degrees(math.atan2(
-        cos_u1 * sin_lam,
-        -sin_u1 * cos_u2 + cos_u1 * sin_u2 * cos_lam,
-    ))
+    back_az = math.degrees(
+        math.atan2(
+            cos_u1 * sin_lam,
+            -sin_u1 * cos_u2 + cos_u1 * sin_u2 * cos_lam,
+        )
+    )
     # Normalise to [0, 360)
     fwd_az = fwd_az % 360.0
     back_az = back_az % 360.0
@@ -471,15 +482,17 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
     cos_alpha1 = math.cos(alpha1)
 
     tan_u1 = (1.0 - f) * math.tan(math.radians(point[0]))
-    cos_u1 = 1.0 / math.sqrt(1.0 + tan_u1 ** 2)
+    cos_u1 = 1.0 / math.sqrt(1.0 + tan_u1**2)
     sin_u1 = tan_u1 * cos_u1
 
     sigma1 = math.atan2(tan_u1, cos_alpha1)
     sin_alpha = cos_u1 * sin_alpha1
-    cos_sq_alpha = 1.0 - sin_alpha ** 2
+    cos_sq_alpha = 1.0 - sin_alpha**2
 
-    u_sq = cos_sq_alpha * (a ** 2 - b ** 2) / (b ** 2)
-    A = 1.0 + u_sq / 16384.0 * (4096.0 + u_sq * (-768.0 + u_sq * (320.0 - 175.0 * u_sq)))
+    u_sq = cos_sq_alpha * (a**2 - b**2) / (b**2)
+    A = 1.0 + u_sq / 16384.0 * (
+        4096.0 + u_sq * (-768.0 + u_sq * (320.0 - 175.0 * u_sq))
+    )
     B = u_sq / 1024.0 * (256.0 + u_sq * (-128.0 + u_sq * (74.0 - 47.0 * u_sq)))
 
     sigma = distance_m / (b * A)
@@ -489,13 +502,21 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
         sin_sigma = math.sin(sigma)
         cos_sigma = math.cos(sigma)
 
-        delta_sigma = B * sin_sigma * (
-            cos_2sigma_m
-            + B / 4.0 * (
-                cos_sigma * (-1.0 + 2.0 * cos_2sigma_m ** 2)
-                - B / 6.0 * cos_2sigma_m
-                * (-3.0 + 4.0 * sin_sigma ** 2)
-                * (-3.0 + 4.0 * cos_2sigma_m ** 2)
+        delta_sigma = (
+            B
+            * sin_sigma
+            * (
+                cos_2sigma_m
+                + B
+                / 4.0
+                * (
+                    cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2)
+                    - B
+                    / 6.0
+                    * cos_2sigma_m
+                    * (-3.0 + 4.0 * sin_sigma**2)
+                    * (-3.0 + 4.0 * cos_2sigma_m**2)
+                )
             )
         )
         sigma_prev = sigma
@@ -509,9 +530,9 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
 
     lat2 = math.atan2(
         sin_u1 * cos_sigma + cos_u1 * sin_sigma * cos_alpha1,
-        (1.0 - f) * math.sqrt(
-            sin_alpha ** 2
-            + (sin_u1 * sin_sigma - cos_u1 * cos_sigma * cos_alpha1) ** 2
+        (1.0 - f)
+        * math.sqrt(
+            sin_alpha**2 + (sin_u1 * sin_sigma - cos_u1 * cos_sigma * cos_alpha1) ** 2
         ),
     )
 
@@ -523,9 +544,9 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
     c = f / 16.0 * cos_sq_alpha * (4.0 + f * (4.0 - 3.0 * cos_sq_alpha))
     L = lam - (1.0 - c) * f * sin_alpha * (
         sigma
-        + c * sin_sigma * (
-            cos_2sigma_m + c * cos_sigma * (-1.0 + 2.0 * cos_2sigma_m ** 2)
-        )
+        + c
+        * sin_sigma
+        * (cos_2sigma_m + c * cos_sigma * (-1.0 + 2.0 * cos_2sigma_m**2))
     )
 
     lon2 = math.radians(point[1]) + L
