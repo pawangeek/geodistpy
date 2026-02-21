@@ -290,36 +290,17 @@ def great_circle(u, v):
 @jit(nopython=True)
 def great_circle_array(u, v):
     """
-    Use spherical geometry to calculate the surface distance between points.
-
-    The function calculates the surface distance between two points on the Earth's surface
-    using spherical geometry. It is optimized with Numba's JIT (Just-In-Time) compilation for
-    improved performance.
-
+    Compute the great-circle (spherical) distance between two points or arrays of points on Earth.
+    
     Parameters:
-        u : (latitude_1, longitude_1), floats or arrays of floats
-            The coordinates of the first point in the format (latitude, longitude) in degrees.
-            It can be a single pair of coordinates or arrays of coordinates for multiple points.
-        v : (latitude_2, longitude_2), floats or arrays of floats
-            The coordinates of the second point in the format (latitude, longitude) in degrees.
-            It can be a single pair of coordinates or arrays of coordinates for multiple points.
-
+        u: tuple or array-like
+            (latitude, longitude) in degrees for the first point, or arrays of latitudes and longitudes of matching shape.
+        v: tuple or array-like
+            (latitude, longitude) in degrees for the second point, or arrays of latitudes and longitudes of matching shape.
+    
     Returns:
-        distance : float or array of floats, in meters
-            The surface distance between the points. If input arguments are arrays of coordinates,
-            the result is an array of distances.
-
-    Notes:
-        - The function uses spherical geometry to approximate the surface distance on the Earth's sphere.
-        - The Earth's radius is assumed to be 6,371,009 meters.
-        - The function is optimized for performance using Numba's JIT compilation.
-
-    Example:
-        >>> u = (52.5200, 13.4050)
-        >>> v = (48.8566, 2.3522)
-        >>> distance = great_circle_array(u, v)
-        >>> distance
-        878389.841013836
+        float or ndarray
+            Surface distance in meters between corresponding points. Uses an Earth radius of 6,371,009 meters; returns a scalar for scalar inputs or an array for array inputs.
     """
 
     lat1, lng1 = np.radians(u[0]), np.radians(u[1])
