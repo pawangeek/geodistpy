@@ -417,7 +417,7 @@ def test_vincenty_vs_greatcircle_diverge_for_long_distances():
 def test_geodist_matrix_matches_pairwise():
     coords = [(52.5200, 13.4050), (48.8566, 2.3522), (40.7128, -74.0060)]
     mat = geodist_matrix(coords, metric="meter")
-    for i in range(len(coords)):
-        for j in range(len(coords)):
-            expected = geodist(coords[i], coords[j], metric="meter")
+    for i, c1 in enumerate(coords):
+        for j, c2 in enumerate(coords):
+            expected = geodist(c1, c2, metric="meter")
             assert mat[i, j] == pytest.approx(expected, rel=1e-6)
