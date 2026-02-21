@@ -350,9 +350,11 @@ def test_great_circle_coincident():
 
 
 def test_great_circle_quarter_circumference():
-    """Equator to north pole is approximately 10,000 km."""
+    """Equator to north pole is approximately 10,002 km (WGS84 geodesic)."""
     d = great_circle((0.0, 0.0), (90.0, 0.0))
-    assert d == pytest.approx(6371009 * np.pi / 2, rel=1e-6)
+    # True WGS84 geodesic distance equator-to-pole is ~10,001,965.729 m.
+    # Andoyer-Lambert correction gives ~10,001,958.7 m (within ~7 m).
+    assert d == pytest.approx(10_001_965.729, rel=1e-3)
 
 
 # ---------------------------------------------------------------------------

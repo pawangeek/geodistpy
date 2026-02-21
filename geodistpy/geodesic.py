@@ -71,8 +71,8 @@ def geodesic_vincenty_inverse(point1, point2):
     # WGS84 ellipsoid parameters:
     a = 6378137  # meters
     f = 1 / 298.257223563
-    # b = (1 - f)a, in meters
-    b = 6356752.314245
+    # b = (1 - f)a, in meters (full precision, not truncated)
+    b = a * (1 - f)
 
     # Inverse method parameters:
     max_iterations = 200
@@ -145,7 +145,7 @@ def geodesic_vincenty_inverse(point1, point2):
     )
     s = b * A * (sigma - delta_sigma)
 
-    return round(s, 6)
+    return s
 
 
 def geodesic_vincenty(p1, p2):
@@ -238,11 +238,12 @@ def geodist_dimwise(X):
 @jit(nopython=True)
 def great_circle(u, v):
     """
-    Use spherical geometry to calculate the surface distance between points.
+    Calculate the surface distance between two points on the WGS84 ellipsoid
+    using the great circle formula with an Andoyer-Lambert flattening correction.
 
-    The function calculates the surface distance between two points on the Earth's surface
-    using spherical geometry. It is optimized with Numba's JIT (Just-In-Time) compilation for
-    improved performance.
+    This provides a fast approximation that is significantly more accurate than
+    a pure spherical great circle, by applying a first-order correction for
+    the Earth's oblateness.
 
     Parameters:
         u : (latitude_1, longitude_1)
@@ -255,9 +256,13 @@ def great_circle(u, v):
             The surface distance between the points.
 
     Notes:
-        - The function uses spherical geometry to approximate the surface distance on the Earth's sphere.
-        - The Earth's radius is assumed to be 6,371,009 meters.
+        - Uses the Vincenty special case for spherical central angle, then applies
+          the Andoyer-Lambert correction for WGS84 flattening.
         - The function is optimized for performance using Numba's JIT compilation.
+
+    References:
+        - Andoyer, H. (1932). "Formule donnant la longueur de la géodésique joignant 2 points de l'ellipsoïde"
+        - Lambert, W. D. (1942). "The distance between two widely separated points on the surface of the earth"
 
     Example:
         >>> u = (52.5200, 13.4050)
@@ -266,6 +271,10 @@ def great_circle(u, v):
         >>> distance
         878389.841013836
     """
+
+    # WGS84 parameters
+    a = 6378137.0
+    f = 1.0 / 298.257223563
 
     lat1, lng1 = math.radians(u[0]), math.radians(u[1])
     lat2, lng2 = math.radians(v[0]), math.radians(v[1])
@@ -276,7 +285,8 @@ def great_circle(u, v):
     delta_lng = abs(lng2 - lng1)
     cos_delta_lng, sin_delta_lng = math.cos(delta_lng), math.sin(delta_lng)
 
-    d = math.atan2(
+    # Spherical central angle (Vincenty formula for numerical stability)
+    sigma = math.atan2(
         math.sqrt(
             (cos_lat2 * sin_delta_lng) ** 2
             + (cos_lat1 * sin_lat2 - sin_lat1 * cos_lat2 * cos_delta_lng) ** 2
@@ -284,34 +294,58 @@ def great_circle(u, v):
         sin_lat1 * sin_lat2 + cos_lat1 * cos_lat2 * cos_delta_lng,
     )
 
-    return 6371009 * d
+    if sigma == 0.0:
+        return 0.0
+
+    # Andoyer-Lambert flattening correction
+    F = (lat1 + lat2) / 2.0   # mean latitude
+    G = (lat1 - lat2) / 2.0   # half latitude difference
+    lam = delta_lng / 2.0      # half longitude difference
+
+    sinF2 = math.sin(F) ** 2
+    cosF2 = math.cos(F) ** 2
+    sinG2 = math.sin(G) ** 2
+    cosG2 = math.cos(G) ** 2
+    sinL2 = math.sin(lam) ** 2
+    cosL2 = math.cos(lam) ** 2
+
+    S = sinG2 * cosL2 + cosF2 * sinL2
+    C = cosG2 * cosL2 + sinF2 * sinL2
+
+    omega = math.atan2(math.sqrt(S), math.sqrt(C))
+
+    if omega == 0.0:
+        return 0.0
+
+    R = math.sqrt(S * C) / omega
+    D = 2.0 * omega * a
+    H1 = (3.0 * R - 1.0) / (2.0 * C)
+    H2 = (3.0 * R + 1.0) / (2.0 * S)
+
+    return D * (1.0 + f * (H1 * sinF2 * cosG2 - H2 * cosF2 * sinG2))
 
 
 @jit(nopython=True)
 def great_circle_array(u, v):
     """
-    Use spherical geometry to calculate the surface distance between points.
+    Calculate the surface distance between points on the WGS84 ellipsoid
+    using the great circle formula with an Andoyer-Lambert flattening correction.
 
-    The function calculates the surface distance between two points on the Earth's surface
-    using spherical geometry. It is optimized with Numba's JIT (Just-In-Time) compilation for
-    improved performance.
+    Vectorized version that accepts arrays of coordinates.
 
     Parameters:
         u : (latitude_1, longitude_1), floats or arrays of floats
             The coordinates of the first point in the format (latitude, longitude) in degrees.
-            It can be a single pair of coordinates or arrays of coordinates for multiple points.
         v : (latitude_2, longitude_2), floats or arrays of floats
             The coordinates of the second point in the format (latitude, longitude) in degrees.
-            It can be a single pair of coordinates or arrays of coordinates for multiple points.
 
     Returns:
         distance : float or array of floats, in meters
-            The surface distance between the points. If input arguments are arrays of coordinates,
-            the result is an array of distances.
+            The surface distance between the points.
 
     Notes:
-        - The function uses spherical geometry to approximate the surface distance on the Earth's sphere.
-        - The Earth's radius is assumed to be 6,371,009 meters.
+        - Uses the Vincenty special case for spherical central angle, then applies
+          the Andoyer-Lambert correction for WGS84 flattening.
         - The function is optimized for performance using Numba's JIT compilation.
 
     Example:
@@ -322,6 +356,10 @@ def great_circle_array(u, v):
         878389.841013836
     """
 
+    # WGS84 parameters
+    a = 6378137.0
+    f = 1.0 / 298.257223563
+
     lat1, lng1 = np.radians(u[0]), np.radians(u[1])
     lat2, lng2 = np.radians(v[0]), np.radians(v[1])
 
@@ -331,7 +369,8 @@ def great_circle_array(u, v):
     delta_lng = np.abs(lng2 - lng1)
     cos_delta_lng, sin_delta_lng = np.cos(delta_lng), np.sin(delta_lng)
 
-    d = np.arctan2(
+    # Spherical central angle (Vincenty formula for numerical stability)
+    sigma = np.arctan2(
         np.sqrt(
             (cos_lat2 * sin_delta_lng) ** 2
             + (cos_lat1 * sin_lat2 - sin_lat1 * cos_lat2 * cos_delta_lng) ** 2
@@ -339,7 +378,37 @@ def great_circle_array(u, v):
         sin_lat1 * sin_lat2 + cos_lat1 * cos_lat2 * cos_delta_lng,
     )
 
-    return 6371009 * d
+    # Andoyer-Lambert flattening correction
+    F = (lat1 + lat2) / 2.0
+    G = (lat1 - lat2) / 2.0
+    lam = delta_lng / 2.0
+
+    sinF2 = np.sin(F) ** 2
+    cosF2 = np.cos(F) ** 2
+    sinG2 = np.sin(G) ** 2
+    cosG2 = np.cos(G) ** 2
+    sinL2 = np.sin(lam) ** 2
+    cosL2 = np.cos(lam) ** 2
+
+    S = sinG2 * cosL2 + cosF2 * sinL2
+    C = cosG2 * cosL2 + sinF2 * sinL2
+
+    omega = np.arctan2(np.sqrt(S), np.sqrt(C))
+
+    # Avoid division by zero for coincident points
+    safe_omega = np.where(omega == 0.0, 1.0, omega)
+    safe_S = np.where(S == 0.0, 1.0, S)
+    safe_C = np.where(C == 0.0, 1.0, C)
+
+    R = np.sqrt(S * C) / safe_omega
+    D = 2.0 * omega * a
+    H1 = (3.0 * R - 1.0) / (2.0 * safe_C)
+    H2 = (3.0 * R + 1.0) / (2.0 * safe_S)
+
+    result = D * (1.0 + f * (H1 * sinF2 * cosG2 - H2 * cosF2 * sinG2))
+
+    # Zero out coincident points
+    return np.where(sigma == 0.0, 0.0, result)
 
 
 def geodist_dimwise_harvesine(X):
