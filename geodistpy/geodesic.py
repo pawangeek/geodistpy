@@ -328,7 +328,7 @@ def great_circle_array(u, v):
     sin_lat1, cos_lat1 = np.sin(lat1), np.cos(lat1)
     sin_lat2, cos_lat2 = np.sin(lat2), np.cos(lat2)
 
-    delta_lng = abs(lng2 - lng1)
+    delta_lng = np.abs(lng2 - lng1)
     cos_delta_lng, sin_delta_lng = np.cos(delta_lng), np.sin(delta_lng)
 
     d = np.arctan2(

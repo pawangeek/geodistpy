@@ -8,7 +8,7 @@ Geodistpy is a powerful Python library designed for lightning-fast geospatial di
 # Import libraries
 from geopy.distance import geodesic as geodesic_geopy
 from geographiclib.geodesic import Geodesic as geodesic_gglib
-from geokernels.geodesics import geodesic_vincenty
+from geodistpy.geodesic import geodesic_vincenty
 
 # Define two coordinates
 coord1 = (52.5200, 13.4050)  # Berlin
@@ -20,14 +20,14 @@ distance_geopy = geodesic_geopy(coord1, coord2).meters
 # Calculate distance with Geographiclib
 distance_gglib = geodesic_gglib.WGS84.Inverse(coord1[0], coord1[1], coord2[0], coord2[1])['s12']
 
-# Calculate distance with Geokernels
-distance_geokernels = geodesic_vincenty(coord1, coord2)
+# Calculate distance with Geodistpy
+distance_geodistpy = geodesic_vincenty(coord1, coord2)
 
 # Print the results
 print(f"Distance between Berlin and Paris:")
 print(f"Geopy: {distance_geopy} meters")
 print(f"Geographiclib: {distance_gglib} meters")
-print(f"Geokernels: {distance_geokernels} meters")
+print(f"Geodistpy: {distance_geodistpy} meters")
 
 ```
 We conducted a speed comparison between Geodistpy, Geopy, and Geographiclib using 1000 random samples of coordinates (latitude and longitude). The goal was to calculate all pairwise distances between these coordinates.

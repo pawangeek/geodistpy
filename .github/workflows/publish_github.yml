@@ -1,11 +1,9 @@
 name: build
 
 on:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - main
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build-n-publish:

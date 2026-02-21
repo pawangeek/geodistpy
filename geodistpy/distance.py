@@ -3,7 +3,7 @@
 
 Coordinates are assumed to be in Latitude and Longitude (WGS 84). Accepting numpy arrays as input.
 
-The geospatial distance calculation is based on Vincenty's inverse method formula and accelerated with Numba (see `geokernels.geodesics.geodesic_vincenty` and references).
+The geospatial distance calculation is based on Vincenty's inverse method formula and accelerated with Numba (see `geodistpy.geodesic.geodesic_vincenty` and references).
 
 In a few cases (<0.01%) Vincenty's inverse method can fail to converge, and a fallback option using the slower geographiclib solution is implemented.
 
@@ -12,7 +12,7 @@ In a few cases (<0.01%) Vincenty's inverse method can fail to converge, and a fa
 - `geodist`: returns a list of distances between points of two lists: `dist[i] = distance(XA[i], XB[i])`
 - `geodist_matrix`: returns a distance matrix between all possible combinations of pairwise distances (either between all points in one list or points between two lists). `dist[i,j] = distance(XA[i], XB[j])` or `distance(X[i], X[j])`
 
-This implementation provides a fast computation of geo-spatial distances in comparison to alternative methods for computing geodesic distance (tested: geopy and GeographicLib, see `geokernels.test_geodesics` for test functions).
+This implementation provides a fast computation of geo-spatial distances in comparison to alternative methods for computing geodesic distance (tested: geopy and GeographicLib, see `tests.test_geodist` for test functions).
 
 ## References:
 

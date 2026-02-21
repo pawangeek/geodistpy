@@ -2,8 +2,7 @@
 
 [![pypi](https://img.shields.io/pypi/v/geodistpy?label=PyPI&logo=PyPI&logoColor=white&color=blue)](https://pypi.python.org/pypi/geodistpy)
 [![lint](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/lint.yml)
-[![Build status](https://ci.appveyor.com/api/projects/status/iqux1vla5rm8bi8r?svg=true)](https://ci.appveyor.com/project/pawangeek/geodistpy)
-[![Github Build](https://github.com/pawangeek/geodistpy/actions/workflows/publish_github.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/publish_github.yml)
+[![Build](https://github.com/pawangeek/geodistpy/actions/workflows/build_package.yml/badge.svg)](https://github.com/pawangeek/geodistpy/actions/workflows/build_package.yml)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/geodistpy?label=Python&logo=Python&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -19,7 +18,7 @@ Geodistpy is a powerful Python library designed for lightning-fast geospatial di
 # Import libraries
 from geopy.distance import geodesic as geodesic_geopy
 from geographiclib.geodesic import Geodesic as geodesic_gglib
-from geokernels.geodesics import geodesic_vincenty
+from geodistpy.geodesic import geodesic_vincenty
 
 # Define two coordinates
 coord1 = (52.5200, 13.4050)  # Berlin
@@ -31,14 +30,14 @@ distance_geopy = geodesic_geopy(coord1, coord2).meters
 # Calculate distance with Geographiclib
 distance_gglib = geodesic_gglib.WGS84.Inverse(coord1[0], coord1[1], coord2[0], coord2[1])['s12']
 
-# Calculate distance with Geokernels
-distance_geokernels = geodesic_vincenty(coord1, coord2)
+# Calculate distance with Geodistpy
+distance_geodistpy = geodesic_vincenty(coord1, coord2)
 
 # Print the results
 print(f"Distance between Berlin and Paris:")
 print(f"Geopy: {distance_geopy} meters")
 print(f"Geographiclib: {distance_gglib} meters")
-print(f"Geokernels: {distance_geokernels} meters")
+print(f"Geodistpy: {distance_geodistpy} meters")
 ```
 
 We conducted a speed comparison between Geodistpy, Geopy, and Geographiclib using 1000 random samples of coordinates (latitude and longitude). The goal was to calculate all pairwise distances between these coordinates.
