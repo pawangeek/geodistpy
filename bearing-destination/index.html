@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.23">
+      <meta name="generator" content="zensical-0.0.24">
     
     
       
@@ -36,7 +36,7 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.1e989742.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.28978c9b.min.css">
       
         
           
@@ -537,6 +537,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#using-different-ellipsoids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Different Ellipsoids
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -863,6 +874,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#using-different-ellipsoids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Different Ellipsoids
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1075,6 +1097,27 @@
 </tbody>
 </table>
 <p>These are fast enough for real-time applications with thousands of calls per second.</p>
+<h2 id="using-different-ellipsoids">Using Different Ellipsoids<a class="headerlink" href="#using-different-ellipsoids" title="Permanent link">&para;</a></h2>
+<p>Both <code>bearing()</code> and <code>destination()</code> accept an optional <code>ellipsoid</code> parameter. By default, WGS-84 is used. You can choose from six built-in ellipsoids or pass a custom <code>(a, f)</code> tuple:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">bearing</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">ELLIPSOIDS</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Bearing on the GRS-80 ellipsoid</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">b</span> <span class="o">=</span> <span class="n">bearing</span><span class="p">((</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">),</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="s1">&#39;GRS-80&#39;</span><span class="p">)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GRS-80 bearing: </span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">°&quot;</span><span class="p">)</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># Destination on the Airy 1830 ellipsoid</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">destination</span><span class="p">((</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">),</span> <span class="mf">90.0</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">,</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="s1">&#39;Airy (1830)&#39;</span><span class="p">)</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Airy destination: (</span><span class="si">{</span><span class="n">lat</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">lon</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="c1"># Custom ellipsoid as (semi_major_axis, flattening) tuple</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">destination</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">45.0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">,</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="p">(</span><span class="mf">6378388.0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mf">297.0</span><span class="p">))</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom destination: (</span><span class="si">{</span><span class="n">lat</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">lon</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1"># Available named ellipsoids</span>
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="nb">print</span><span class="p">(</span><span class="n">ELLIPSOIDS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="c1"># dict_keys([&#39;WGS-84&#39;, &#39;GRS-80&#39;, &#39;Airy (1830)&#39;, &#39;Intl 1924&#39;, &#39;Clarke (1880)&#39;, &#39;GRS-67&#39;])</span>
+</span></code></pre></div>
+<p>Supported named ellipsoids: <strong>WGS-84</strong> (default), <strong>GRS-80</strong>, <strong>Airy (1830)</strong>, <strong>Intl 1924</strong>, <strong>Clarke (1880)</strong>, <strong>GRS-67</strong>.</p>
 
 
 
@@ -1213,7 +1256,7 @@
       <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.5fcf0de6.min.js"></script>
+      <script src="../assets/javascripts/bundle.16f8adc2.min.js"></script>
       
     
   </body>

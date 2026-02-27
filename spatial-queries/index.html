@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.23">
+      <meta name="generator" content="zensical-0.0.24">
     
     
       
@@ -36,7 +36,7 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.1e989742.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.28978c9b.min.css">
       
         
           
@@ -625,6 +625,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-different-ellipsoids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Different Ellipsoids
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#edge-cases" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -934,6 +945,17 @@
     <span class="md-ellipsis">
       
         Performance Considerations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-different-ellipsoids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Different Ellipsoids
       
     </span>
   </a>
@@ -1257,6 +1279,34 @@
 <li><strong>Pre-filtering</strong> with a bounding box on lat/lon before calling these functions</li>
 <li>Using <code>geodist_matrix</code> for batch computation when you need all pairwise distances</li>
 </ol>
+<h2 id="using-different-ellipsoids">Using Different Ellipsoids<a class="headerlink" href="#using-different-ellipsoids" title="Permanent link">&para;</a></h2>
+<p>Both <code>geodesic_knn()</code> and <code>point_in_radius()</code> accept an optional <code>ellipsoid</code> parameter. By default, WGS-84 is used. You can choose from six built-in ellipsoids or pass a custom <code>(a, f)</code> tuple:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">geodesic_knn</span><span class="p">,</span> <span class="n">point_in_radius</span><span class="p">,</span> <span class="n">ELLIPSOIDS</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">query</span> <span class="o">=</span> <span class="p">(</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">)</span>  <span class="c1"># Berlin</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">cities</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span>    <span class="c1"># Paris</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="p">(</span><span class="mf">51.5074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1278</span><span class="p">),</span>   <span class="c1"># London</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="p">(</span><span class="mf">41.9028</span><span class="p">,</span> <span class="mf">12.4964</span><span class="p">),</span>   <span class="c1"># Rome</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="p">]</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="c1"># k-NN on the GRS-80 ellipsoid</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">geodesic_knn</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">,</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="s1">&#39;GRS-80&#39;</span><span class="p">)</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GRS-80 nearest: indices </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">, distances </span><span class="si">{</span><span class="n">dists</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> km&quot;</span><span class="p">)</span>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="c1"># Point-in-radius on the Clarke 1880 ellipsoid</span>
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">point_in_radius</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">,</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="s1">&#39;Clarke (1880)&#39;</span><span class="p">)</span>
+</span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Clarke within 1000 km: indices </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-11-17"><a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>
+</span><span id="__span-11-18"><a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="c1"># Custom ellipsoid</span>
+</span><span id="__span-11-19"><a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">geodesic_knn</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">,</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="p">(</span><span class="mf">6378160.0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mf">298.25</span><span class="p">))</span>
+</span><span id="__span-11-20"><a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom nearest: index </span><span class="si">{</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, distance </span><span class="si">{</span><span class="n">dists</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km&quot;</span><span class="p">)</span>
+</span><span id="__span-11-21"><a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>
+</span><span id="__span-11-22"><a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="c1"># See all available ellipsoids</span>
+</span><span id="__span-11-23"><a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="nb">print</span><span class="p">(</span><span class="n">ELLIPSOIDS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span><span id="__span-11-24"><a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="c1"># dict_keys([&#39;WGS-84&#39;, &#39;GRS-80&#39;, &#39;Airy (1830)&#39;, &#39;Intl 1924&#39;, &#39;Clarke (1880)&#39;, &#39;GRS-67&#39;])</span>
+</span></code></pre></div>
+<p>Supported named ellipsoids: <strong>WGS-84</strong> (default), <strong>GRS-80</strong>, <strong>Airy (1830)</strong>, <strong>Intl 1924</strong>, <strong>Clarke (1880)</strong>, <strong>GRS-67</strong>.</p>
 <h2 id="edge-cases">Edge Cases<a class="headerlink" href="#edge-cases" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1426,7 +1476,7 @@
       <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.5fcf0de6.min.js"></script>
+      <script src="../assets/javascripts/bundle.16f8adc2.min.js"></script>
       
     
   </body>

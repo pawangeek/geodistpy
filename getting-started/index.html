@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.23">
+      <meta name="generator" content="zensical-0.0.24">
     
     
       
@@ -36,7 +36,7 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.1e989742.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.28978c9b.min.css">
       
         
           
@@ -328,6 +328,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#ellipsoid-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ellipsoid Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -531,6 +542,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#ellipsoid-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ellipsoid Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -590,49 +612,64 @@
 
 
 <h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
+<h2 id="ellipsoid-support">Ellipsoid Support<a class="headerlink" href="#ellipsoid-support" title="Permanent link">&para;</a></h2>
+<p>All distance, bearing, destination, interpolation, and spatial query functions accept an optional <code>ellipsoid</code> parameter. By default, WGS-84 is used.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">geodist</span><span class="p">,</span> <span class="n">ELLIPSOIDS</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Use a named ellipsoid</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">d</span> <span class="o">=</span> <span class="n">geodist</span><span class="p">((</span><span class="mf">52.52</span><span class="p">,</span> <span class="mf">13.405</span><span class="p">),</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;km&quot;</span><span class="p">,</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="s2">&quot;GRS-80&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Use a custom (a, f) tuple</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">d</span> <span class="o">=</span> <span class="n">geodist</span><span class="p">((</span><span class="mf">52.52</span><span class="p">,</span> <span class="mf">13.405</span><span class="p">),</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="n">ellipsoid</span><span class="o">=</span><span class="p">(</span><span class="mf">6378137.0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mf">298.257223563</span><span class="p">))</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># See all available ellipsoids</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">print</span><span class="p">(</span><span class="n">ELLIPSOIDS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># dict_keys([&#39;WGS-84&#39;, &#39;GRS-80&#39;, &#39;Airy (1830)&#39;, &#39;Intl 1924&#39;, &#39;Clarke (1880)&#39;, &#39;GRS-67&#39;])</span>
+</span></code></pre></div>
+<p>Supported named ellipsoids: <strong>WGS-84</strong> (default), <strong>GRS-80</strong>, <strong>Airy (1830)</strong>, <strong>Intl 1924</strong>, <strong>Clarke (1880)</strong>, <strong>GRS-67</strong>. You can also pass any <code>(semi_major_axis, flattening)</code> tuple.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>You can install the <code>geodistpy</code> package using <code>pip</code>:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>geodistpy
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>geodistpy
 </span></code></pre></div>
 <h2 id="quick-start-guide">Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Permanent link">&para;</a></h2>
 <p>The quickest way to start using the <code>geodistpy</code> package is to calculate the distance between two geographical coordinates. Here's how you can do it:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">geodist</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Define two coordinates in (latitude, longitude) format</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">coord1</span> <span class="o">=</span> <span class="p">(</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">)</span>  <span class="c1"># Berlin, Germany</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">coord2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">)</span>   <span class="c1"># Paris, France</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Calculate the distance between the two coordinates in kilometers</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">distance_km</span> <span class="o">=</span> <span class="n">geodist</span><span class="p">(</span><span class="n">coord1</span><span class="p">,</span> <span class="n">coord2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Distance between Berlin and Paris: </span><span class="si">{</span><span class="n">distance_km</span><span class="si">}</span><span class="s2"> kilometers&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">geodist</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Define two coordinates in (latitude, longitude) format</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">coord1</span> <span class="o">=</span> <span class="p">(</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">)</span>  <span class="c1"># Berlin, Germany</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">coord2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">)</span>   <span class="c1"># Paris, France</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Calculate the distance between the two coordinates in kilometers</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">distance_km</span> <span class="o">=</span> <span class="n">geodist</span><span class="p">(</span><span class="n">coord1</span><span class="p">,</span> <span class="n">coord2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Distance between Berlin and Paris: </span><span class="si">{</span><span class="n">distance_km</span><span class="si">}</span><span class="s2"> kilometers&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="beyond-distance-bearing-destination-and-spatial-queries">Beyond Distance: Bearing, Destination, and Spatial Queries<a class="headerlink" href="#beyond-distance-bearing-destination-and-spatial-queries" title="Permanent link">&para;</a></h2>
 <p><code>geodistpy</code> goes beyond simple distance calculations. Here are a few more things you can do right away:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">bearing</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">midpoint</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">point_in_radius</span><span class="p">,</span> <span class="n">geodesic_knn</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">berlin</span> <span class="o">=</span> <span class="p">(</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">)</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">paris</span>  <span class="o">=</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">)</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Bearing: initial direction from Berlin to Paris</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bearing: </span><span class="si">{</span><span class="n">bearing</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="n">paris</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">°&quot;</span><span class="p">)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># Destination: where do you end up travelling 500 km east from Berlin?</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Destination: </span><span class="si">{</span><span class="n">destination</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="mf">90.0</span><span class="p">,</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Midpoint along the geodesic</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Midpoint: </span><span class="si">{</span><span class="n">midpoint</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="n">paris</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c1"># 3 evenly-spaced waypoints between Berlin and Paris</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waypoints: </span><span class="si">{</span><span class="n">interpolate</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="n">paris</span><span class="p">,</span><span class="w"> </span><span class="n">n_points</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># Which of these cities are within 1000 km of Berlin?</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="n">cities</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="p">(</span><span class="mf">51.5074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1278</span><span class="p">),</span> <span class="p">(</span><span class="mf">40.7128</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.006</span><span class="p">)]</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">point_in_radius</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Within 1000 km: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
-</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1"># 2 nearest cities to Berlin</span>
-</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">geodesic_knn</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
-</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;2 nearest: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">, distances: </span><span class="si">{</span><span class="n">dists</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> km&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">bearing</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">midpoint</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">point_in_radius</span><span class="p">,</span> <span class="n">geodesic_knn</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">berlin</span> <span class="o">=</span> <span class="p">(</span><span class="mf">52.5200</span><span class="p">,</span> <span class="mf">13.4050</span><span class="p">)</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">paris</span>  <span class="o">=</span> <span class="p">(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Bearing: initial direction from Berlin to Paris</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bearing: </span><span class="si">{</span><span class="n">bearing</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="n">paris</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">°&quot;</span><span class="p">)</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># Destination: where do you end up travelling 500 km east from Berlin?</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Destination: </span><span class="si">{</span><span class="n">destination</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="mf">90.0</span><span class="p">,</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="c1"># Midpoint along the geodesic</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Midpoint: </span><span class="si">{</span><span class="n">midpoint</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="n">paris</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># 3 evenly-spaced waypoints between Berlin and Paris</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waypoints: </span><span class="si">{</span><span class="n">interpolate</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span><span class="w"> </span><span class="n">paris</span><span class="p">,</span><span class="w"> </span><span class="n">n_points</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="c1"># Which of these cities are within 1000 km of Berlin?</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="n">cities</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="p">(</span><span class="mf">51.5074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1278</span><span class="p">),</span> <span class="p">(</span><span class="mf">40.7128</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.006</span><span class="p">)]</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">point_in_radius</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Within 1000 km: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="c1"># 2 nearest cities to Berlin</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">geodesic_knn</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;2 nearest: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">, distances: </span><span class="si">{</span><span class="n">dists</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> km&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <p>For full API details, see the <a href="../api-reference/">API Reference</a>.</p>
 
@@ -773,7 +810,7 @@
       <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.5fcf0de6.min.js"></script>
+      <script src="../assets/javascripts/bundle.16f8adc2.min.js"></script>
       
     
   </body>
