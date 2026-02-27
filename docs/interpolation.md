@@ -224,6 +224,36 @@ This approach produces points that lie exactly on the geodesic between the two e
 !!! note "Why not spherical interpolation?"
     Spherical (SLERP) interpolation assumes a perfect sphere and can accumulate errors of up to ~21 km over intercontinental distances. Geodistpy's ellipsoidal interpolation uses the WGS-84 ellipsoid for maximum accuracy.
 
+## Using Different Ellipsoids
+
+Both `interpolate()` and `midpoint()` accept an optional `ellipsoid` parameter. By default, WGS-84 is used. You can choose from six built-in ellipsoids or pass a custom `(a, f)` tuple:
+
+```python
+from geodistpy import midpoint, interpolate, ELLIPSOIDS
+
+berlin = (52.5200, 13.4050)
+paris  = (48.8566, 2.3522)
+
+# Midpoint on the GRS-80 ellipsoid
+mid = midpoint(berlin, paris, ellipsoid='GRS-80')
+print(f"GRS-80 midpoint: ({mid[0]:.6f}, {mid[1]:.6f})")
+
+# Interpolation on the Intl 1924 ellipsoid
+pts = interpolate(berlin, paris, n_points=3, ellipsoid='Intl 1924')
+for i, p in enumerate(pts, 1):
+    print(f"  Waypoint {i}: ({p[0]:.4f}, {p[1]:.4f})")
+
+# Custom ellipsoid
+mid = midpoint(berlin, paris, ellipsoid=(6378137.0, 1/298.257222101))
+print(f"Custom midpoint: ({mid[0]:.6f}, {mid[1]:.6f})")
+
+# See all available ellipsoids
+print(ELLIPSOIDS.keys())
+# dict_keys(['WGS-84', 'GRS-80', 'Airy (1830)', 'Intl 1924', 'Clarke (1880)', 'GRS-67'])
+```
+
+Supported named ellipsoids: **WGS-84** (default), **GRS-80**, **Airy (1830)**, **Intl 1924**, **Clarke (1880)**, **GRS-67**.
+
 ## Edge Cases
 
 | Scenario | Behavior |

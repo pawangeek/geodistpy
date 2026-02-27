@@ -30,6 +30,7 @@ The `geodistpy` package is a versatile library for geospatial calculations, offe
 - **Bearing & destination:** Compute forward azimuth between points and find destination given start + bearing + distance (Vincenty inverse/direct pair)
 - **Geodesic interpolation:** Generate evenly-spaced waypoints and midpoints along geodesics for routing and visualization
 - **Spatial queries:** Point-in-radius filtering (geofencing) and k-nearest-neighbour search using exact ellipsoidal distances
+- **Multiple ellipsoids:** Built-in support for WGS-84, GRS-80, Airy 1830, Intl 1924, Clarke 1880, GRS-67, or pass any custom `(a, f)` tuple
 
 ## Quick Example
 
@@ -60,6 +61,25 @@ print(f"Midpoint: ({mid[0]:.4f}, {mid[1]:.4f})")
 cities = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
 idx, dists = geodesic_knn(berlin, cities, k=2, metric='km')
 print(f"2 nearest: {idx}, distances: {dists.round(1)} km")
+```
+
+### Using Different Ellipsoids
+
+All functions accept an optional `ellipsoid` parameter. By default, WGS-84 is used:
+
+```python
+from geodistpy import geodist, ELLIPSOIDS
+
+# Use a named ellipsoid (GRS-80, Airy 1830, Intl 1924, Clarke 1880, GRS-67)
+d = geodist(berlin, paris, metric='km', ellipsoid='GRS-80')
+print(f"GRS-80 distance: {d:.1f} km")
+
+# Use a custom (semi_major_axis, flattening) tuple
+d = geodist(berlin, paris, ellipsoid=(6378137.0, 1/298.257223563))
+print(f"Custom ellipsoid distance: {d:.1f} m")
+
+# List all available ellipsoids
+print(ELLIPSOIDS.keys())
 ```
 
 ## Links

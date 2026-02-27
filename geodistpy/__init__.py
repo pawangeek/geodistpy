@@ -9,3 +9,4 @@ from geodistpy.distance import (
     point_in_radius,
     geodesic_knn,
 )
+from geodistpy.geodesic import ELLIPSOIDS

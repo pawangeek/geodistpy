@@ -234,7 +234,32 @@ idx, dists = point_in_radius((52.5200, 13.4050), cities, 1500, metric='km')
 print(f"Cities within 1500 km: indices {idx}, distances {dists.round(1)} km")
 ```
 
-### Example 8: k-Nearest Neighbours on Geodesic Distance
+### Example 8: Using Different Ellipsoids
+
+All distance, bearing, destination, interpolation, and spatial query functions accept an optional `ellipsoid` parameter. By default, WGS-84 is used. You can choose from six built-in ellipsoids or pass a custom `(a, f)` tuple:
+
+```python
+from geodistpy import geodist, ELLIPSOIDS
+
+coord1 = (52.5200, 13.4050)  # Berlin
+coord2 = (48.8566, 2.3522)   # Paris
+
+# Use a named ellipsoid
+d_grs80 = geodist(coord1, coord2, metric='km', ellipsoid='GRS-80')
+print(f"GRS-80: {d_grs80:.2f} km")
+
+# Use a custom (semi_major_axis, flattening) tuple
+d_custom = geodist(coord1, coord2, metric='km', ellipsoid=(6378137.0, 1/298.257223563))
+print(f"Custom: {d_custom:.2f} km")
+
+# See all built-in ellipsoids
+print(ELLIPSOIDS.keys())
+# dict_keys(['WGS-84', 'GRS-80', 'Airy (1830)', 'Intl 1924', 'Clarke (1880)', 'GRS-67'])
+```
+
+Supported named ellipsoids: **WGS-84** (default), **GRS-80**, **Airy (1830)**, **Intl 1924**, **Clarke (1880)**, **GRS-67**.
+
+### Example 9: k-Nearest Neighbours on Geodesic Distance
 
 Find the closest points using exact ellipsoidal distances (not haversine approximation):
 
