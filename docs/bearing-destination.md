@@ -195,3 +195,29 @@ Both `bearing()` and `destination()` benefit from Numba JIT compilation:
 | `destination()` | ~0.5 µs | Vincenty direct converges quickly |
 
 These are fast enough for real-time applications with thousands of calls per second.
+
+## Using Different Ellipsoids
+
+Both `bearing()` and `destination()` accept an optional `ellipsoid` parameter. By default, WGS-84 is used. You can choose from six built-in ellipsoids or pass a custom `(a, f)` tuple:
+
+```python
+from geodistpy import bearing, destination, ELLIPSOIDS
+
+# Bearing on the GRS-80 ellipsoid
+b = bearing((52.5200, 13.4050), (48.8566, 2.3522), ellipsoid='GRS-80')
+print(f"GRS-80 bearing: {b:.4f}°")
+
+# Destination on the Airy 1830 ellipsoid
+lat, lon = destination((52.5200, 13.4050), 90.0, 500, metric='km', ellipsoid='Airy (1830)')
+print(f"Airy destination: ({lat:.4f}, {lon:.4f})")
+
+# Custom ellipsoid as (semi_major_axis, flattening) tuple
+lat, lon = destination((0, 0), 45.0, 1000, metric='km', ellipsoid=(6378388.0, 1/297.0))
+print(f"Custom destination: ({lat:.4f}, {lon:.4f})")
+
+# Available named ellipsoids
+print(ELLIPSOIDS.keys())
+# dict_keys(['WGS-84', 'GRS-80', 'Airy (1830)', 'Intl 1924', 'Clarke (1880)', 'GRS-67'])
+```
+
+Supported named ellipsoids: **WGS-84** (default), **GRS-80**, **Airy (1830)**, **Intl 1924**, **Clarke (1880)**, **GRS-67**.

@@ -5,6 +5,26 @@ description: Learn how to install geodistpy and calculate geodesic distances bet
 
 # Getting Started
 
+## Ellipsoid Support
+
+All distance, bearing, destination, interpolation, and spatial query functions accept an optional `ellipsoid` parameter. By default, WGS-84 is used.
+
+```python
+from geodistpy import geodist, ELLIPSOIDS
+
+# Use a named ellipsoid
+d = geodist((52.52, 13.405), (48.8566, 2.3522), metric="km", ellipsoid="GRS-80")
+
+# Use a custom (a, f) tuple
+d = geodist((52.52, 13.405), (48.8566, 2.3522), ellipsoid=(6378137.0, 1/298.257223563))
+
+# See all available ellipsoids
+print(ELLIPSOIDS.keys())
+# dict_keys(['WGS-84', 'GRS-80', 'Airy (1830)', 'Intl 1924', 'Clarke (1880)', 'GRS-67'])
+```
+
+Supported named ellipsoids: **WGS-84** (default), **GRS-80**, **Airy (1830)**, **Intl 1924**, **Clarke (1880)**, **GRS-67**. You can also pass any `(semi_major_axis, flattening)` tuple.
+
 ## Installation
 
 You can install the `geodistpy` package using `pip`:

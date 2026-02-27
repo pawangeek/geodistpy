@@ -25,6 +25,8 @@ from geodistpy.geodesic import (
     great_circle_array,
     geodist_dimwise,
     geodist_dimwise_harvesine,
+    ELLIPSOIDS,
+    _resolve_ellipsoid,
 )
 
 
@@ -167,6 +169,31 @@ def test_geodist_matrix_cdist():
     for i in range(2):
         for j in range(2):
             expected = geodist(coords1[i], coords2[j], metric="mile")
+            assert mat[i, j] == pytest.approx(expected, rel=1e-6)
+
+
+def test_geodist_matrix_cdist_different_sizes():
+    """Verify cdist-mode works when coords1 and coords2 have different lengths."""
+    coords1 = [(52.5200, 13.4050), (48.8566, 2.3522), (37.7749, -122.4194)]
+    coords2 = [(40.7128, -74.0060), (41.8781, -87.6298)]
+    mat = geodist_matrix(coords1, coords2, metric="km")
+    assert mat.shape == (3, 2)
+    # Each entry should match individual geodist calls
+    for i in range(3):
+        for j in range(2):
+            expected = geodist(coords1[i], coords2[j], metric="km")
+            assert mat[i, j] == pytest.approx(expected, rel=1e-6)
+
+
+def test_greatcircle_matrix_cdist_different_sizes():
+    """Verify cdist-mode greatcircle_matrix works with different-length inputs."""
+    coords1 = [(52.5200, 13.4050), (48.8566, 2.3522), (37.7749, -122.4194)]
+    coords2 = [(40.7128, -74.0060), (41.8781, -87.6298)]
+    mat = greatcircle_matrix(coords1, coords2, metric="km")
+    assert mat.shape == (3, 2)
+    for i in range(3):
+        for j in range(2):
+            expected = greatcircle(coords1[i], coords2[j], metric="km")
             assert mat[i, j] == pytest.approx(expected, rel=1e-6)
 
 
@@ -969,3 +996,184 @@ def test_geodesic_knn_metric():
     _, d_m = geodesic_knn(query, pts, k=1, metric="meter")
     _, d_km = geodesic_knn(query, pts, k=1, metric="km")
     assert d_m[0] == pytest.approx(d_km[0] * 1000.0, rel=1e-8)
+
+
+# ===========================================================================
+# ELLIPSOID SUPPORT
+# ===========================================================================
+
+
+class TestResolveEllipsoid:
+    """Tests for _resolve_ellipsoid helper."""
+
+    def test_wgs84_default(self):
+        a, f = _resolve_ellipsoid("WGS-84")
+        assert a == pytest.approx(6378137.0)
+        assert f == pytest.approx(1.0 / 298.257223563)
+
+    def test_none_returns_wgs84(self):
+        a, f = _resolve_ellipsoid(None)
+        assert a == pytest.approx(6378137.0)
+
+    def test_grs80(self):
+        a, f = _resolve_ellipsoid("GRS-80")
+        assert a == pytest.approx(6378137.0)
+        assert f == pytest.approx(1.0 / 298.257222101)
+
+    def test_custom_tuple(self):
+        a, f = _resolve_ellipsoid((6377000.0, 1.0 / 300.0))
+        assert a == pytest.approx(6377000.0)
+        assert f == pytest.approx(1.0 / 300.0)
+
+    def test_unknown_raises(self):
+        with pytest.raises(ValueError, match="Unknown ellipsoid"):
+            _resolve_ellipsoid("INVALID-MODEL")
+
+    def test_custom_tuple_negative_a_raises(self):
+        with pytest.raises(ValueError, match="Semi-major axis"):
+            _resolve_ellipsoid((-1.0, 1.0 / 298.0))
+
+    def test_custom_tuple_zero_a_raises(self):
+        with pytest.raises(ValueError, match="Semi-major axis"):
+            _resolve_ellipsoid((0.0, 1.0 / 298.0))
+
+    def test_custom_tuple_f_too_large_raises(self):
+        with pytest.raises(ValueError, match="Flattening"):
+            _resolve_ellipsoid((6378137.0, 1.0))
+
+    def test_custom_tuple_f_negative_raises(self):
+        with pytest.raises(ValueError, match="Flattening"):
+            _resolve_ellipsoid((6378137.0, -0.01))
+
+    def test_all_ellipsoids_resolve(self):
+        for name in ELLIPSOIDS:
+            a, _f = _resolve_ellipsoid(name)
+            assert a > 6_000_000
+            assert 0 < _f < 0.01
+
+
+class TestEllipsoidGeodesic:
+    """Tests for geodesic distance with different ellipsoids."""
+
+    berlin = (52.5200, 13.4050)
+    paris = (48.8566, 2.3522)
+
+    def test_wgs84_matches_default(self):
+        """Explicit WGS-84 must match the default (no ellipsoid)."""
+        d_default = geodist(self.berlin, self.paris, metric="km")
+        d_wgs84 = geodist(self.berlin, self.paris, metric="km", ellipsoid="WGS-84")
+        assert d_default == pytest.approx(d_wgs84, rel=1e-12)
+
+    def test_grs80_very_close_to_wgs84(self):
+        """GRS-80 and WGS-84 differ by ~0.1mm in flattening → negligible distance diff."""
+        d_wgs84 = geodist(self.berlin, self.paris, metric="meter", ellipsoid="WGS-84")
+        d_grs80 = geodist(self.berlin, self.paris, metric="meter", ellipsoid="GRS-80")
+        # Should be within 1 meter for ~880 km distance
+        assert d_wgs84 == pytest.approx(d_grs80, abs=1.0)
+
+    def test_different_ellipsoids_give_different_distances(self):
+        """Clarke 1880 has noticeably different params → measurable distance diff."""
+        d_wgs84 = geodist(self.berlin, self.paris, metric="meter", ellipsoid="WGS-84")
+        d_clarke = geodist(
+            self.berlin, self.paris, metric="meter", ellipsoid="Clarke (1880)"
+        )
+        # Should differ by more than 10m for ~880 km distance
+        assert abs(d_wgs84 - d_clarke) > 10.0
+
+    def test_custom_ellipsoid_tuple(self):
+        """Custom (a, f) tuple should work."""
+        d = geodist(
+            self.berlin,
+            self.paris,
+            metric="km",
+            ellipsoid=(6378137.0, 1.0 / 298.257223563),
+        )
+        d_wgs84 = geodist(self.berlin, self.paris, metric="km", ellipsoid="WGS-84")
+        assert d == pytest.approx(d_wgs84, rel=1e-12)
+
+    def test_intl_1924(self):
+        """International 1924 ellipsoid should produce valid distances."""
+        d = geodist(self.berlin, self.paris, metric="km", ellipsoid="Intl 1924")
+        assert 870 < d < 890  # Berlin-Paris is ~879 km
+
+    def test_all_named_ellipsoids_work(self):
+        """All named ellipsoids should produce reasonable Berlin-Paris distances."""
+        for name in ELLIPSOIDS:
+            d = geodist(self.berlin, self.paris, metric="km", ellipsoid=name)
+            assert 870 < d < 890, f"Ellipsoid {name} gave {d} km"
+
+
+class TestEllipsoidBearing:
+    """Tests for bearing with different ellipsoids."""
+
+    def test_bearing_grs80(self):
+        b = bearing((0.0, 0.0), (0.0, 1.0), ellipsoid="GRS-80")
+        assert b == pytest.approx(90.0, abs=0.01)
+
+    def test_bearing_ellipsoid_consistency(self):
+        """Bearing should be very similar across close ellipsoids."""
+        b_wgs = bearing((52.52, 13.405), (48.8566, 2.3522), ellipsoid="WGS-84")
+        b_grs = bearing((52.52, 13.405), (48.8566, 2.3522), ellipsoid="GRS-80")
+        assert b_wgs == pytest.approx(b_grs, abs=0.001)
+
+
+class TestEllipsoidDestination:
+    """Tests for destination with different ellipsoids."""
+
+    def test_destination_roundtrip_grs80(self):
+        a = (52.5200, 13.4050)
+        b = (48.8566, 2.3522)
+        b_deg = bearing(a, b, ellipsoid="GRS-80")
+        d = geodist(a, b, metric="km", ellipsoid="GRS-80")
+        lat, lon = destination(a, b_deg, d, metric="km", ellipsoid="GRS-80")
+        assert lat == pytest.approx(b[0], abs=1e-3)
+        assert lon == pytest.approx(b[1], abs=1e-3)
+
+
+class TestEllipsoidInterpolate:
+    """Tests for interpolate/midpoint with different ellipsoids."""
+
+    def test_midpoint_grs80(self):
+        mid = midpoint((0.0, 0.0), (0.0, 10.0), ellipsoid="GRS-80")
+        assert mid[0] == pytest.approx(0.0, abs=0.01)
+        assert mid[1] == pytest.approx(5.0, abs=0.05)
+
+    def test_interpolate_clarke(self):
+        pts = interpolate(
+            (0.0, 0.0), (0.0, 10.0), n_points=4, ellipsoid="Clarke (1880)"
+        )
+        assert len(pts) == 4
+        lons = [p[1] for p in pts]
+        assert lons == sorted(lons)
+
+
+class TestEllipsoidMatrix:
+    """Tests for geodist_matrix with different ellipsoids."""
+
+    def test_matrix_grs80_symmetric(self):
+        coords = [(52.5200, 13.4050), (48.8566, 2.3522), (40.7128, -74.0060)]
+        mat = geodist_matrix(coords, metric="km", ellipsoid="GRS-80")
+        assert mat.shape == (3, 3)
+        np.testing.assert_allclose(np.diag(mat), 0.0, atol=1e-8)
+        np.testing.assert_allclose(mat, mat.T, atol=1e-6)
+
+
+class TestEllipsoidSpatialQueries:
+    """Tests for point_in_radius and geodesic_knn with different ellipsoids."""
+
+    def test_point_in_radius_grs80(self):
+        pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+        idx, _dists = point_in_radius(
+            (52.5200, 13.4050), pts, 1000, metric="km", ellipsoid="GRS-80"
+        )
+        assert 0 in idx
+        assert 2 in idx
+        assert 1 not in idx
+
+    def test_geodesic_knn_clarke(self):
+        pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
+        idx, _dists = geodesic_knn(
+            (52.5200, 13.4050), pts, k=2, metric="km", ellipsoid="Clarke (1880)"
+        )
+        assert len(idx) == 2
+        assert set(idx) == {0, 2}

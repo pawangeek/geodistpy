@@ -1,7 +1,12 @@
-"""Geodesic distance calculation functions on a spheroid (WGS84).
+"""Geodesic distance calculation functions on an ellipsoid.
 
 The recommended function is based on Vincenty's inverse method formula
 as implemented in the function geodesic_vincenty_inverse and accelerated with numba.
+
+Multiple ellipsoid models are supported (WGS-84 by default).  The
+:data:`ELLIPSOIDS` dictionary contains pre-defined models such as WGS-84,
+GRS-80, Clarke 1880, and others.  A custom ``(a, f)`` tuple can also be
+supplied via :func:`_resolve_ellipsoid`.
 
 Alternative methods for computing geodesic distance via geopy or GeographicLib
 are much slower (see README and test_geodesics.py).
@@ -27,12 +32,60 @@ from numba import jit, prange
 
 from geographiclib.geodesic import Geodesic as gglib
 
+# ── WGS-84 defaults (used throughout as default ellipsoid) ────────────
+WGS84_A = 6378137.0  # semi-major axis in meters
+WGS84_F = 1.0 / 298.257223563  # flattening
+
+# ── Supported ellipsoid models: (semi-major axis [m], flattening) ─────
+ELLIPSOIDS = {
+    "WGS-84": (6378137.0, 1.0 / 298.257223563),
+    "GRS-80": (6378137.0, 1.0 / 298.257222101),
+    "Airy (1830)": (6377563.396, 1.0 / 299.3249646),
+    "Intl 1924": (6378388.0, 1.0 / 297.0),
+    "Clarke (1880)": (6378249.145, 1.0 / 293.465),
+    "GRS-67": (6378160.0, 1.0 / 298.25),
+}
+
+
+def _resolve_ellipsoid(ellipsoid):
+    """Resolve an ellipsoid identifier to *(a, f)* floats.
+
+    Parameters:
+        ellipsoid : str or tuple
+            Either a key from :data:`ELLIPSOIDS` (e.g. ``'WGS-84'``) or a
+            ``(a, f)`` tuple where *a* is the semi-major axis in **meters**
+            and *f* is the flattening.
+
+    Returns:
+        (float, float): ``(a, f)``
+
+    Raises:
+        ValueError: If the string is not a recognised ellipsoid name.
+    """
+    if ellipsoid is None or ellipsoid == "WGS-84":
+        return (WGS84_A, WGS84_F)
+    if isinstance(ellipsoid, str):
+        try:
+            return ELLIPSOIDS[ellipsoid]
+        except KeyError as err:
+            raise ValueError(
+                f"Unknown ellipsoid '{ellipsoid}'. "
+                f"Available: {list(ELLIPSOIDS.keys())}"
+            ) from err
+    # Assume (a, f) tuple / list
+    a, f = float(ellipsoid[0]), float(ellipsoid[1])
+    if a <= 0:
+        raise ValueError(f"Semi-major axis a must be positive, got {a}")
+    if not (0 < f < 1):
+        raise ValueError(f"Flattening f must be in (0, 1), got {f}")
+    return (a, f)
+
 
 @jit(nopython=True, fastmath=True, cache=True)
-def geodesic_vincenty_inverse(point1, point2):
+def geodesic_vincenty_inverse(point1, point2, a=WGS84_A, f=WGS84_F):
     """
     Compute the geodesic distance between two points on the
-    surface of a spheroid (WGS84) based on Vincenty's formula
+    surface of an ellipsoid based on Vincenty's formula
     for the inverse geodetic problem.
 
     The function calculates the geodesic distance between two points on the Earth's surface
@@ -44,15 +97,19 @@ def geodesic_vincenty_inverse(point1, point2):
             The coordinates of the first point in the format (latitude, longitude) in degrees.
         point2 : (latitude_2, longitude_2)
             The coordinates of the second point in the format (latitude, longitude) in degrees.
+        a : float, optional
+            Semi-major axis of the ellipsoid in meters.  Default is WGS-84.
+        f : float, optional
+            Flattening of the ellipsoid.  Default is WGS-84.
 
     Returns:
         distance : float, in meters
             The geodesic distance between the points.
 
     Notes:
-        - The function uses Vincenty's formula to compute the geodesic distance on the surface of a spheroid (WGS84).
+        - The function uses Vincenty's formula to compute the geodesic distance on the surface of an ellipsoid.
         - It includes parameters for controlling the convergence of the iterative calculation.
-        - The Earth's radius is assumed to be based on the WGS84 spheroid.
+        - The default ellipsoid is WGS-84; other models can be used by supplying *a* and *f*.
         - The function is optimized for performance using Numba's JIT compilation.
 
     Example:
@@ -67,11 +124,8 @@ def geodesic_vincenty_inverse(point1, point2):
         (https://github.com/maurycyp/vincenty).
     """
 
-    # WGS84 ellipsoid parameters:
-    a = 6378137  # meters
-    f = 1 / 298.257223563
-    # b = (1 - f)a, in meters (full precision, not truncated)
-    b = a * (1 - f)
+    # Derive semi-minor axis from the ellipsoid parameters
+    b = a * (1.0 - f)
 
     # Inverse method parameters:
     max_iterations = 200
@@ -147,11 +201,11 @@ def geodesic_vincenty_inverse(point1, point2):
     return s
 
 
-def geodesic_vincenty(p1, p2):
+def geodesic_vincenty(p1, p2, a=WGS84_A, f=WGS84_F):
     """
     Compute the geodesic distance between two points on the
-    surface of a spheroid (WGS84) based on Vincenty's formula
-    for the inverse geodetic problem[0].
+    surface of a spheroid based on Vincenty's formula
+    for the inverse geodetic problem.
 
     In the unlikely case Vincenty's inverse method fails to converge,
     the geographiclib algorithm is used instead.
@@ -161,15 +215,14 @@ def geodesic_vincenty(p1, p2):
             The coordinates of the first point in the format (latitude, longitude) in degrees.
         p2 : (latitude_2, longitude_2)
             The coordinates of the second point in the format (latitude, longitude) in degrees.
+        a : float, optional
+            Semi-major axis of the ellipsoid in meters. Default is WGS-84.
+        f : float, optional
+            Flattening of the ellipsoid. Default is WGS-84.
 
     Returns:
         distance : float, in meters
             The geodesic distance between the points.
-
-    Notes:
-        - The function calculates the geodesic distance on the surface of a spheroid (WGS84) using Vincenty's formula.
-        - In case Vincenty's inverse method fails to converge, the geographiclib algorithm is used as a fallback.
-        - The Earth's radius is assumed to be based on the WGS84 spheroid.
 
     Example:
         >>> p1 = (52.5200, 13.4050)
@@ -179,26 +232,25 @@ def geodesic_vincenty(p1, p2):
         878389.841013836
     """
 
-    d = geodesic_vincenty_inverse(p1, p2)
+    d = geodesic_vincenty_inverse(p1, p2, a, f)
     if d is None:
         # in case vincenty fails to converge, use geographiclib
-        return gglib.WGS84.Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
+        return gglib(a, f).Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
     else:
         return d
 
 
 @jit(nopython=True, fastmath=True, parallel=True, cache=True)
-def _vincenty_pdist(coords):
+def _vincenty_pdist(coords, a=WGS84_A, f=WGS84_F):
     """Compute pairwise Vincenty distances (pdist-style) using Numba parallel.
 
     Non-convergent pairs are marked with -1.0 as a sentinel value.
-    Use vincenty_pdist() (without underscore) for automatic geographiclib fallback.
     """
     n = coords.shape[0]
     result = np.zeros((n, n))
     for i in prange(n):
         for j in range(i + 1, n):
-            d = geodesic_vincenty_inverse(coords[i], coords[j])
+            d = geodesic_vincenty_inverse(coords[i], coords[j], a, f)
             if d is None:
                 d = -1.0  # sentinel: non-convergence
             result[i, j] = d
@@ -207,25 +259,24 @@ def _vincenty_pdist(coords):
 
 
 @jit(nopython=True, fastmath=True, parallel=True, cache=True)
-def _vincenty_cdist(coords1, coords2):
+def _vincenty_cdist(coords1, coords2, a=WGS84_A, f=WGS84_F):
     """Compute cross-distance Vincenty matrix using Numba parallel.
 
     Non-convergent pairs are marked with -1.0 as a sentinel value.
-    Use vincenty_cdist() (without underscore) for automatic geographiclib fallback.
     """
     n1 = coords1.shape[0]
     n2 = coords2.shape[0]
     result = np.zeros((n1, n2))
     for i in prange(n1):
         for j in range(n2):
-            d = geodesic_vincenty_inverse(coords1[i], coords2[j])
+            d = geodesic_vincenty_inverse(coords1[i], coords2[j], a, f)
             if d is None:
                 d = -1.0  # sentinel: non-convergence
             result[i, j] = d
     return result
 
 
-def _apply_fallback(dist, coords1, coords2=None):
+def _apply_fallback(dist, coords1, coords2=None, a=WGS84_A, f=WGS84_F):
     """Replace sentinel values (-1.0) with geographiclib fallback distances.
 
     When Vincenty's method fails to converge (<0.01% of cases, typically
@@ -235,12 +286,13 @@ def _apply_fallback(dist, coords1, coords2=None):
     mask = dist < 0.0
     if not mask.any():
         return dist
+    geod = gglib(a, f)
     indices = np.argwhere(mask)
     for idx in indices:
         i, j = idx[0], idx[1]
         p1 = coords1[i]
         p2 = coords2[j] if coords2 is not None else coords1[j]
-        dist[i, j] = gglib.WGS84.Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
+        dist[i, j] = geod.Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
         # Mirror for symmetric pdist case
         if coords2 is None and i != j:
             dist[j, i] = dist[i, j]
@@ -318,10 +370,10 @@ def geodist_dimwise(X):
 
 
 @jit(nopython=True, fastmath=True, cache=True)
-def geodesic_vincenty_inverse_full(point1, point2):
+def geodesic_vincenty_inverse_full(point1, point2, a=WGS84_A, f=WGS84_F):
     """
     Compute the geodesic distance **and** forward/back azimuths between two
-    points on the WGS-84 ellipsoid using Vincenty's inverse formula.
+    points on an ellipsoid using Vincenty's inverse formula.
 
     This is the "full" variant of :func:`geodesic_vincenty_inverse`; it
     returns a 3-element tuple ``(distance, fwd_azimuth, back_azimuth)``
@@ -332,6 +384,10 @@ def geodesic_vincenty_inverse_full(point1, point2):
             The coordinates of the first point in degrees.
         point2 : (latitude_2, longitude_2)
             The coordinates of the second point in degrees.
+        a : float, optional
+            Semi-major axis of the ellipsoid in meters. Default is WGS-84.
+        f : float, optional
+            Flattening of the ellipsoid. Default is WGS-84.
 
     Returns:
         (distance, fwd_azimuth, back_azimuth) : (float, float, float)
@@ -339,9 +395,6 @@ def geodesic_vincenty_inverse_full(point1, point2):
             Returns ``(0.0, 0.0, 0.0)`` for coincident points and
             ``(-1.0, 0.0, 0.0)`` when the iteration does not converge.
     """
-    # WGS84 ellipsoid parameters
-    a = 6378137.0
-    f = 1.0 / 298.257223563
     b = a * (1.0 - f)
 
     max_iterations = 200
@@ -448,10 +501,10 @@ def geodesic_vincenty_inverse_full(point1, point2):
 
 
 @jit(nopython=True, fastmath=True, cache=True)
-def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
+def geodesic_vincenty_direct(point, azimuth_deg, distance_m, a=WGS84_A, f=WGS84_F):
     """
     Compute the destination point given a start point, initial bearing, and
-    distance along the geodesic on the WGS-84 ellipsoid (Vincenty direct).
+    distance along the geodesic on an ellipsoid (Vincenty direct).
 
     Parameters:
         point : (latitude, longitude)
@@ -460,6 +513,10 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
             Initial bearing (forward azimuth) in degrees clockwise from north.
         distance_m : float
             Distance to travel along the geodesic in **meters**.
+        a : float, optional
+            Semi-major axis of the ellipsoid in meters. Default is WGS-84.
+        f : float, optional
+            Flattening of the ellipsoid. Default is WGS-84.
 
     Returns:
         (latitude, longitude) : (float, float)
@@ -470,9 +527,6 @@ def geodesic_vincenty_direct(point, azimuth_deg, distance_m):
         Vincenty, T. (1975). "Direct and inverse solutions of geodesics on the
         ellipsoid with application of nested equations". Survey Review.
     """
-    # WGS84 ellipsoid parameters
-    a = 6378137.0
-    f = 1.0 / 298.257223563
     b = a * (1.0 - f)
 
     max_iterations = 200

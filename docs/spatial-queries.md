@@ -283,6 +283,39 @@ Both functions compute distances sequentially (one Vincenty call per candidate).
 1. **Pre-filtering** with a bounding box on lat/lon before calling these functions
 2. Using `geodist_matrix` for batch computation when you need all pairwise distances
 
+## Using Different Ellipsoids
+
+Both `geodesic_knn()` and `point_in_radius()` accept an optional `ellipsoid` parameter. By default, WGS-84 is used. You can choose from six built-in ellipsoids or pass a custom `(a, f)` tuple:
+
+```python
+from geodistpy import geodesic_knn, point_in_radius, ELLIPSOIDS
+
+query = (52.5200, 13.4050)  # Berlin
+cities = [
+    (48.8566, 2.3522),    # Paris
+    (51.5074, -0.1278),   # London
+    (41.9028, 12.4964),   # Rome
+]
+
+# k-NN on the GRS-80 ellipsoid
+idx, dists = geodesic_knn(query, cities, k=2, metric='km', ellipsoid='GRS-80')
+print(f"GRS-80 nearest: indices {idx}, distances {dists.round(1)} km")
+
+# Point-in-radius on the Clarke 1880 ellipsoid
+idx, dists = point_in_radius(query, cities, 1000, metric='km', ellipsoid='Clarke (1880)')
+print(f"Clarke within 1000 km: indices {idx}")
+
+# Custom ellipsoid
+idx, dists = geodesic_knn(query, cities, k=1, metric='km', ellipsoid=(6378160.0, 1/298.25))
+print(f"Custom nearest: index {idx[0]}, distance {dists[0]:.1f} km")
+
+# See all available ellipsoids
+print(ELLIPSOIDS.keys())
+# dict_keys(['WGS-84', 'GRS-80', 'Airy (1830)', 'Intl 1924', 'Clarke (1880)', 'GRS-67'])
+```
+
+Supported named ellipsoids: **WGS-84** (default), **GRS-80**, **Airy (1830)**, **Intl 1924**, **Clarke (1880)**, **GRS-67**.
+
 ## Edge Cases
 
 | Scenario | Behavior |

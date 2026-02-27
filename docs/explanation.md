@@ -104,6 +104,22 @@ The `interpolate()` and `midpoint()` functions combine the inverse and direct Vi
 ### Spatial Queries (k-NN and Point-in-Radius)
 The `geodesic_knn()` and `point_in_radius()` functions fill the gap left by sklearn's `BallTree` which only supports haversine (spherical) distances. These functions use exact Vincenty ellipsoidal distances, providing higher accuracy for geofencing, store-locator, and spatial filtering applications.
 
+### Multiple Ellipsoid Support
+All distance, bearing, destination, interpolation, and spatial query functions accept an optional `ellipsoid` parameter. By default, WGS-84 is used. Six named ellipsoids are built in — **WGS-84**, **GRS-80**, **Airy (1830)**, **Intl 1924**, **Clarke (1880)**, and **GRS-67** — and users can also pass any custom `(semi_major_axis, flattening)` tuple for specialised geodetic applications. The `_resolve_ellipsoid()` helper converts the user input into `(a, f)` floats that are threaded through every Numba-JIT function, so switching ellipsoids incurs no additional overhead.
+
+```python
+from geodistpy import geodist, ELLIPSOIDS
+
+# Named ellipsoid
+d = geodist((52.52, 13.405), (48.8566, 2.3522), metric='km', ellipsoid='GRS-80')
+
+# Custom (a, f) tuple
+d = geodist((52.52, 13.405), (48.8566, 2.3522), ellipsoid=(6378137.0, 1/298.257223563))
+
+# List available ellipsoids
+print(ELLIPSOIDS.keys())
+```
+
 ## Context and Background
 
 The Python package `geodistpy` is a versatile library designed for geospatial calculations involving distances between geographical coordinates. It is built on the principles of geodesy and uses the WGS 84 coordinate system, which is commonly used in GPS and mapping applications.
