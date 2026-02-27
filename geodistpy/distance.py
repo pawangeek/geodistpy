@@ -44,9 +44,6 @@ from .geodesic import (
     _apply_fallback,
     _great_circle_pdist,
     _great_circle_cdist,
-    ELLIPSOIDS,
-    WGS84_A,
-    WGS84_F,
     _resolve_ellipsoid,
 )
 
@@ -83,7 +80,7 @@ def geodist(coords1, coords2, metric="meter", ellipsoid="WGS-84"):
     """
     Return distances between two coordinates or two lists of coordinates.
 
-    Coordinates are assumed to be in Latitude, Longitude (WGS 84) format.
+    Coordinates are assumed to be in Latitude, Longitude format.
 
     For distances between all pair combinations, see geo_pdist and geo_cdist.
 
@@ -93,6 +90,9 @@ def geodist(coords1, coords2, metric="meter", ellipsoid="WGS-84"):
             The shape of coords1 should match the shape of coords2.
         metric (str, optional): The unit of measurement for the calculated distances. Possible values are 'meter', 'km', 'mile', or 'nmi'.
             Default is 'meter'.
+        ellipsoid (str or tuple, optional): Ellipsoid model to use: a name
+            from :data:`ELLIPSOIDS` (e.g. ``'WGS-84'``, ``'GRS-80'``) or a
+            custom ``(a, f)`` tuple.  Default is ``'WGS-84'``.
 
     Returns:
         float or ndarray: The distance(s) between points, with a length of n_points.
@@ -154,7 +154,7 @@ def geodist(coords1, coords2, metric="meter", ellipsoid="WGS-84"):
 def bearing(point1, point2, ellipsoid="WGS-84"):
     """
     Compute the initial bearing (forward azimuth) from *point1* to *point2*
-    on the WGS-84 ellipsoid using Vincenty's inverse formula.
+    on the selected ellipsoid using Vincenty's inverse formula.
 
     The bearing is measured clockwise from true north and returned in the
     range **[0, 360)** degrees.
@@ -164,6 +164,8 @@ def bearing(point1, point2, ellipsoid="WGS-84"):
             Starting point in degrees.
         point2 : tuple (latitude, longitude)
             Destination point in degrees.
+        ellipsoid : str or tuple, optional
+            Ellipsoid model to use.  Default is ``'WGS-84'``.
 
     Returns:
         float
@@ -203,7 +205,8 @@ def bearing(point1, point2, ellipsoid="WGS-84"):
 def destination(point, bearing_deg, distance, metric="meter", ellipsoid="WGS-84"):
     """
     Compute the destination point given a starting point, initial bearing,
-    and distance along the geodesic on the WGS-84 ellipsoid (Vincenty direct).
+    and distance along the geodesic on the selected ellipsoid (Vincenty
+    direct).
 
     Parameters:
         point : tuple (latitude, longitude)
@@ -215,6 +218,8 @@ def destination(point, bearing_deg, distance, metric="meter", ellipsoid="WGS-84"
         metric : str, optional
             Unit of the *distance* parameter: ``'meter'``, ``'km'``,
             ``'mile'``, or ``'nmi'``.  Default is ``'meter'``.
+        ellipsoid : str or tuple, optional
+            Ellipsoid model to use.  Default is ``'WGS-84'``.
 
     Returns:
         tuple (latitude, longitude)
@@ -259,7 +264,7 @@ def destination(point, bearing_deg, distance, metric="meter", ellipsoid="WGS-84"
 def interpolate(point1, point2, n_points=1, ellipsoid="WGS-84"):
     """
     Return evenly-spaced waypoints along the geodesic from *point1* to
-    *point2* on the WGS-84 ellipsoid.
+    *point2* on the selected ellipsoid.
 
     When ``n_points=1`` the function returns the **midpoint**.  For
     ``n_points=N`` it returns *N* interior points that divide the geodesic
@@ -277,6 +282,8 @@ def interpolate(point1, point2, n_points=1, ellipsoid="WGS-84"):
         n_points : int, optional
             Number of interior waypoints to return.  Default is ``1``
             (midpoint only).
+        ellipsoid : str or tuple, optional
+            Ellipsoid model to use.  Default is ``'WGS-84'``.
 
     Returns:
         list of tuples [(lat, lon), ...]
@@ -336,7 +343,7 @@ def interpolate(point1, point2, n_points=1, ellipsoid="WGS-84"):
 
 def midpoint(point1, point2, ellipsoid="WGS-84"):
     """
-    Return the geodesic midpoint between two points on the WGS-84 ellipsoid.
+    Return the geodesic midpoint between two points on the given ellipsoid.
 
     This is a convenience wrapper around :func:`interpolate` with
     ``n_points=1``.
@@ -346,6 +353,10 @@ def midpoint(point1, point2, ellipsoid="WGS-84"):
             First point in degrees.
         point2 : tuple (latitude, longitude)
             Second point in degrees.
+        ellipsoid : str or tuple, optional
+            Ellipsoid model to use: a name from :data:`ELLIPSOIDS`
+            (e.g. ``'WGS-84'``, ``'GRS-80'``) or a custom ``(a, f)``
+            tuple.  Default is ``'WGS-84'``.
 
     Returns:
         tuple (latitude, longitude)
@@ -364,7 +375,7 @@ def midpoint(point1, point2, ellipsoid="WGS-84"):
 def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-84"):
     """
     Find all *candidate* points that lie within a given geodesic radius
-    of a *center* point on the WGS-84 ellipsoid.
+    of a *center* point on the selected ellipsoid.
 
     Useful for geofencing, store-locator queries, and spatial filtering.
 
@@ -378,6 +389,8 @@ def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-8
         metric : str, optional
             Unit for *radius*: ``'meter'``, ``'km'``, ``'mile'``, or
             ``'nmi'``.  Default is ``'meter'``.
+        ellipsoid : str or tuple, optional
+            Ellipsoid model to use.  Default is ``'WGS-84'``.
 
     Returns:
         tuple (indices, distances)
@@ -435,7 +448,7 @@ def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-8
 def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84"):
     """
     Find the *k* nearest neighbours to *point* among *candidates* using
-    exact geodesic (Vincenty) distances on the WGS-84 ellipsoid.
+    exact geodesic (Vincenty) distances on the selected ellipsoid.
 
     This fills the gap left by ``sklearn.neighbors.BallTree`` which only
     supports the haversine (spherical) metric.
@@ -450,6 +463,8 @@ def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84"):
         metric : str, optional
             Unit for the returned distances: ``'meter'``, ``'km'``,
             ``'mile'``, or ``'nmi'``.  Default is ``'meter'``.
+        ellipsoid : str or tuple, optional
+            Ellipsoid model to use.  Default is ``'WGS-84'``.
 
     Returns:
         tuple (indices, distances)
@@ -514,15 +529,17 @@ def geodist_matrix(coords1, coords2=None, metric="meter", ellipsoid="WGS-84"):
     If coords2 is given, compute distance between each possible pair of the two collections
     of inputs: dist[i, j] = distance(X[i], X[j])
 
-    Coordinates are assumed to be in Latitude, Longitude (WGS 84) format.
+    Coordinates are assumed to be in Latitude, Longitude format.
 
     Parameters:
         coords1 (list of tuples): List of coordinates in the format [(lat, long)] or an array with shape (n_points1, 2).
         coords2 (list of tuples, optional): List of coordinates in the format [(lat, long)] or an array with shape (n_points2, 2).
-            If coords2 is not None, coords1.shape must match coords2.shape.
             Default is None.
         metric (str, optional): The unit of measurement for the calculated distances. Possible values are 'meter', 'km', 'mile', or 'nmi'.
             Default is 'meter'.
+        ellipsoid (str or tuple, optional): Ellipsoid model to use: a name
+            from :data:`ELLIPSOIDS` (e.g. ``'WGS-84'``, ``'GRS-80'``) or a
+            custom ``(a, f)`` tuple.  Default is ``'WGS-84'``.
 
     Returns:
         ndarray: A distance matrix is returned.
@@ -568,8 +585,10 @@ def geodist_matrix(coords1, coords2=None, metric="meter", ellipsoid="WGS-84"):
     else:
         coords2 = np.asarray(coords2)
 
-        # If two lists of coordinates are given
-        assert coords1.shape == coords2.shape
+        if coords2.ndim != 2 or coords2.shape[1] != 2:
+            raise ValueError(
+                "coords1 and coords2 must have two dimensions: Latitude, Longitude"
+            )
         if (abs(coords2[:, 0]) > 90).any() or (abs(coords2[:, 1]) > 180).any():
             raise ValueError(
                 "Latitude values must be in the range [-90, 90] and Longitude values must be in the range [-180, 180]."
@@ -656,7 +675,6 @@ def greatcircle_matrix(coords1, coords2=None, metric="meter"):
     Parameters:
         coords1 (list of tuples): List of coordinates in the format [(lat, long)] or an array with shape (n_points1, 2).
         coords2 (list of tuples, optional): List of coordinates in the format [(lat, long)] or an array with shape (n_points2, 2).
-            If coords2 is not None, coords1.shape must match coords2.shape.
             Default is None.
         metric (str, optional): The unit of measurement for the calculated distances. Possible values are 'meter', 'km', 'mile', or 'nmi'.
             Default is 'meter'.
@@ -702,8 +720,11 @@ def greatcircle_matrix(coords1, coords2=None, metric="meter"):
         dist = _great_circle_pdist(np.ascontiguousarray(coords1, dtype=np.float64))
     else:
         coords2 = np.asarray(coords2)
-        assert coords1.shape == coords2.shape
 
+        if coords2.ndim != 2 or coords2.shape[1] != 2:
+            raise ValueError(
+                "coords1 and coords2 must have two dimensions: Latitude, Longitude"
+            )
         if (abs(coords2[:, 0]) > 90).any() or (abs(coords2[:, 1]) > 180).any():
             raise ValueError(
                 "Latitude values must be in the range [-90, 90] and Longitude values must be in the range [-180, 180]."

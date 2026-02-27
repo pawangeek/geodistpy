@@ -1,7 +1,12 @@
-"""Geodesic distance calculation functions on a spheroid (WGS84).
+"""Geodesic distance calculation functions on an ellipsoid.
 
 The recommended function is based on Vincenty's inverse method formula
 as implemented in the function geodesic_vincenty_inverse and accelerated with numba.
+
+Multiple ellipsoid models are supported (WGS-84 by default).  The
+:data:`ELLIPSOIDS` dictionary contains pre-defined models such as WGS-84,
+GRS-80, Clarke 1880, and others.  A custom ``(a, f)`` tuple can also be
+supplied via :func:`_resolve_ellipsoid`.
 
 Alternative methods for computing geodesic distance via geopy or GeographicLib
 are much slower (see README and test_geodesics.py).
@@ -62,21 +67,25 @@ def _resolve_ellipsoid(ellipsoid):
     if isinstance(ellipsoid, str):
         try:
             return ELLIPSOIDS[ellipsoid]
-        except KeyError:
+        except KeyError as err:
             raise ValueError(
                 f"Unknown ellipsoid '{ellipsoid}'. "
                 f"Available: {list(ELLIPSOIDS.keys())}"
-            )
+            ) from err
     # Assume (a, f) tuple / list
-    a, f = ellipsoid
-    return (float(a), float(f))
+    a, f = float(ellipsoid[0]), float(ellipsoid[1])
+    if a <= 0:
+        raise ValueError(f"Semi-major axis a must be positive, got {a}")
+    if not (0 < f < 1):
+        raise ValueError(f"Flattening f must be in (0, 1), got {f}")
+    return (a, f)
 
 
 @jit(nopython=True, fastmath=True, cache=True)
 def geodesic_vincenty_inverse(point1, point2, a=WGS84_A, f=WGS84_F):
     """
     Compute the geodesic distance between two points on the
-    surface of a spheroid (WGS84) based on Vincenty's formula
+    surface of an ellipsoid based on Vincenty's formula
     for the inverse geodetic problem.
 
     The function calculates the geodesic distance between two points on the Earth's surface
@@ -88,15 +97,19 @@ def geodesic_vincenty_inverse(point1, point2, a=WGS84_A, f=WGS84_F):
             The coordinates of the first point in the format (latitude, longitude) in degrees.
         point2 : (latitude_2, longitude_2)
             The coordinates of the second point in the format (latitude, longitude) in degrees.
+        a : float, optional
+            Semi-major axis of the ellipsoid in meters.  Default is WGS-84.
+        f : float, optional
+            Flattening of the ellipsoid.  Default is WGS-84.
 
     Returns:
         distance : float, in meters
             The geodesic distance between the points.
 
     Notes:
-        - The function uses Vincenty's formula to compute the geodesic distance on the surface of a spheroid (WGS84).
+        - The function uses Vincenty's formula to compute the geodesic distance on the surface of an ellipsoid.
         - It includes parameters for controlling the convergence of the iterative calculation.
-        - The Earth's radius is assumed to be based on the WGS84 spheroid.
+        - The default ellipsoid is WGS-84; other models can be used by supplying *a* and *f*.
         - The function is optimized for performance using Numba's JIT compilation.
 
     Example:

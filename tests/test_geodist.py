@@ -25,6 +25,8 @@ from geodistpy.geodesic import (
     great_circle_array,
     geodist_dimwise,
     geodist_dimwise_harvesine,
+    ELLIPSOIDS,
+    _resolve_ellipsoid,
 )
 
 
@@ -167,6 +169,31 @@ def test_geodist_matrix_cdist():
     for i in range(2):
         for j in range(2):
             expected = geodist(coords1[i], coords2[j], metric="mile")
+            assert mat[i, j] == pytest.approx(expected, rel=1e-6)
+
+
+def test_geodist_matrix_cdist_different_sizes():
+    """Verify cdist-mode works when coords1 and coords2 have different lengths."""
+    coords1 = [(52.5200, 13.4050), (48.8566, 2.3522), (37.7749, -122.4194)]
+    coords2 = [(40.7128, -74.0060), (41.8781, -87.6298)]
+    mat = geodist_matrix(coords1, coords2, metric="km")
+    assert mat.shape == (3, 2)
+    # Each entry should match individual geodist calls
+    for i in range(3):
+        for j in range(2):
+            expected = geodist(coords1[i], coords2[j], metric="km")
+            assert mat[i, j] == pytest.approx(expected, rel=1e-6)
+
+
+def test_greatcircle_matrix_cdist_different_sizes():
+    """Verify cdist-mode greatcircle_matrix works with different-length inputs."""
+    coords1 = [(52.5200, 13.4050), (48.8566, 2.3522), (37.7749, -122.4194)]
+    coords2 = [(40.7128, -74.0060), (41.8781, -87.6298)]
+    mat = greatcircle_matrix(coords1, coords2, metric="km")
+    assert mat.shape == (3, 2)
+    for i in range(3):
+        for j in range(2):
+            expected = greatcircle(coords1[i], coords2[j], metric="km")
             assert mat[i, j] == pytest.approx(expected, rel=1e-6)
 
 
@@ -974,7 +1001,6 @@ def test_geodesic_knn_metric():
 # ===========================================================================
 # ELLIPSOID SUPPORT
 # ===========================================================================
-from geodistpy.geodesic import ELLIPSOIDS, _resolve_ellipsoid
 
 
 class TestResolveEllipsoid:
@@ -1003,11 +1029,27 @@ class TestResolveEllipsoid:
         with pytest.raises(ValueError, match="Unknown ellipsoid"):
             _resolve_ellipsoid("INVALID-MODEL")
 
+    def test_custom_tuple_negative_a_raises(self):
+        with pytest.raises(ValueError, match="Semi-major axis"):
+            _resolve_ellipsoid((-1.0, 1.0 / 298.0))
+
+    def test_custom_tuple_zero_a_raises(self):
+        with pytest.raises(ValueError, match="Semi-major axis"):
+            _resolve_ellipsoid((0.0, 1.0 / 298.0))
+
+    def test_custom_tuple_f_too_large_raises(self):
+        with pytest.raises(ValueError, match="Flattening"):
+            _resolve_ellipsoid((6378137.0, 1.0))
+
+    def test_custom_tuple_f_negative_raises(self):
+        with pytest.raises(ValueError, match="Flattening"):
+            _resolve_ellipsoid((6378137.0, -0.01))
+
     def test_all_ellipsoids_resolve(self):
         for name in ELLIPSOIDS:
-            a, f = _resolve_ellipsoid(name)
+            a, _f = _resolve_ellipsoid(name)
             assert a > 6_000_000
-            assert 0 < f < 0.01
+            assert 0 < _f < 0.01
 
 
 class TestEllipsoidGeodesic:
@@ -1121,7 +1163,7 @@ class TestEllipsoidSpatialQueries:
 
     def test_point_in_radius_grs80(self):
         pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
-        idx, dists = point_in_radius(
+        idx, _dists = point_in_radius(
             (52.5200, 13.4050), pts, 1000, metric="km", ellipsoid="GRS-80"
         )
         assert 0 in idx
@@ -1130,7 +1172,7 @@ class TestEllipsoidSpatialQueries:
 
     def test_geodesic_knn_clarke(self):
         pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
-        idx, dists = geodesic_knn(
+        idx, _dists = geodesic_knn(
             (52.5200, 13.4050), pts, k=2, metric="km", ellipsoid="Clarke (1880)"
         )
         assert len(idx) == 2
