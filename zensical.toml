@@ -24,6 +24,7 @@ nav = [
   { "Bearing & Destination" = "bearing-destination.md" },
   { "Interpolation & Midpoints" = "interpolation.md" },
   { "Spatial Queries" = "spatial-queries.md" },
+  { "Pandas & GeoPandas Support" = "pandas-support.md" },
   { "API Reference" = "api-reference.md" },
   { "Benchmarks & Internals" = "explanation.md" },
 ]
