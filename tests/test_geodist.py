@@ -29,6 +29,10 @@ from geodistpy.geodesic import (
     geodist_dimwise_harvesine,
     ELLIPSOIDS,
     _resolve_ellipsoid,
+    _vincenty_1to1,
+    _vincenty_one_to_many,
+    _apply_fallback_1to1,
+    _apply_fallback_one_to_many,
 )
 
 
@@ -1027,6 +1031,83 @@ def test_geodist_to_many_wrong_shape():
     """ValueError for points with wrong shape."""
     with pytest.raises(ValueError):
         geodist_to_many((0.0, 0.0), [(0.0,)], metric="km")
+
+
+def test_geodist_to_many_invalid_origin():
+    """ValueError for out-of-range origin coordinates."""
+    with pytest.raises(ValueError, match="Latitude values must be in the range"):
+        geodist_to_many((95.0, 0.0), [(0.0, 0.0)], metric="km")
+
+
+def test_geodist_to_many_invalid_points_longitude():
+    """ValueError for out-of-range point longitudes in one-to-many."""
+    with pytest.raises(ValueError, match="Longitude values must be in the range"):
+        geodist_to_many((0.0, 0.0), [(0.0, 181.0)], metric="km")
+
+
+def test_point_in_radius_invalid_candidates_latitude():
+    """ValueError for invalid candidate latitude in point_in_radius."""
+    with pytest.raises(ValueError, match="Latitude values must be in the range"):
+        point_in_radius((0.0, 0.0), [(91.0, 0.0)], 100, metric="km")
+
+
+def test_geodesic_knn_invalid_candidates_longitude():
+    """ValueError for invalid candidate longitude in geodesic_knn."""
+    with pytest.raises(ValueError, match="Longitude values must be in the range"):
+        geodesic_knn((0.0, 0.0), [(0.0, 181.0)], k=1, metric="km")
+
+
+def test_vincenty_1to1_matches_elementwise_vincenty():
+    """Internal one-to-one kernel should match scalar Vincenty calls."""
+    coords1 = np.ascontiguousarray(
+        np.array([[52.52, 13.405], [40.7128, -74.0060], [0.0, 0.0]], dtype=np.float64)
+    )
+    coords2 = np.ascontiguousarray(
+        np.array(
+            [[48.8566, 2.3522], [34.0522, -118.2437], [0.0, 90.0]], dtype=np.float64
+        )
+    )
+    dist = _vincenty_1to1(coords1, coords2)
+    expected = np.array(
+        [geodesic_vincenty(coords1[i], coords2[i]) for i in range(len(coords1))]
+    )
+    np.testing.assert_allclose(dist, expected, rtol=1e-10)
+
+
+def test_vincenty_one_to_many_matches_elementwise_vincenty():
+    """Internal one-to-many kernel should match scalar Vincenty calls."""
+    origin = np.ascontiguousarray(np.array([52.52, 13.405], dtype=np.float64))
+    coords = np.ascontiguousarray(
+        np.array(
+            [[48.8566, 2.3522], [51.5074, -0.1278], [40.7128, -74.0060]],
+            dtype=np.float64,
+        )
+    )
+    dist = _vincenty_one_to_many(origin, coords)
+    expected = np.array(
+        [geodesic_vincenty(origin, coords[i]) for i in range(len(coords))]
+    )
+    np.testing.assert_allclose(dist, expected, rtol=1e-10)
+
+
+def test_apply_fallback_1to1_replaces_sentinel_values():
+    """Fallback helper should replace -1 sentinel with valid distance."""
+    coords1 = np.array([[0.0, 0.0], [52.52, 13.405]], dtype=np.float64)
+    coords2 = np.array([[0.0, 179.9999], [48.8566, 2.3522]], dtype=np.float64)
+    dist = np.array([-1.0, 123.45], dtype=np.float64)
+    out = _apply_fallback_1to1(dist.copy(), coords1, coords2)
+    assert out[0] > 0.0
+    assert out[1] == pytest.approx(123.45)
+
+
+def test_apply_fallback_one_to_many_replaces_sentinel_values():
+    """One-to-many fallback helper should replace -1 sentinel values only."""
+    origin = np.array([52.52, 13.405], dtype=np.float64)
+    coords = np.array([[48.8566, 2.3522], [0.0, 179.9999]], dtype=np.float64)
+    dist = np.array([111.0, -1.0], dtype=np.float64)
+    out = _apply_fallback_one_to_many(dist.copy(), origin, coords)
+    assert out[0] == pytest.approx(111.0)
+    assert out[1] > 0.0
 
 
 # ---------------------------------------------------------------------------

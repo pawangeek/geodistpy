@@ -12,6 +12,7 @@ from geodistpy import (
     geodesic_knn,
     point_in_radius,
 )
+import geodistpy.pandas_support as pandas_support
 from geodistpy.pandas_support import _as_coords
 
 # ---------------------------------------------------------------------------
@@ -226,6 +227,61 @@ class TestCoordinatesFromDfInvalidInput:
     def test_scalar_raises_type_error(self):
         with pytest.raises(TypeError, match="expects a pandas DataFrame"):
             coordinates_from_df(42)
+
+
+class TestCoordinatesFromDfOptionalDependencyFallbacks:
+    """Branches that handle missing optional dependencies."""
+
+    def test_import_error_for_dataframe_like_when_pandas_missing(self, monkeypatch):
+        class FakeDataFrame:
+            columns = ["lat", "lon"]
+            iloc = object()
+
+        monkeypatch.setattr(pandas_support, "pd", None)
+        with pytest.raises(ImportError, match="pandas is required"):
+            coordinates_from_df(FakeDataFrame())
+
+    def test_import_error_for_geodataframe_like_when_geopandas_missing(
+        self, monkeypatch
+    ):
+        class FakeGeoDataFrame:
+            geometry = []
+
+        monkeypatch.setattr(pandas_support, "gpd", None)
+        with pytest.raises(ImportError, match="geopandas is required"):
+            coordinates_from_df(FakeGeoDataFrame())
+
+    def test_geodataframe_branch_without_geopandas_installed(self, monkeypatch):
+        class FakePoint:
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        class FakeGeoDataFrame:
+            def __init__(self):
+                self.geometry = [FakePoint(2.35, 48.85), FakePoint(-0.12, 51.50)]
+                self.index = [10, 20]
+
+        class FakeGpd:
+            GeoDataFrame = FakeGeoDataFrame
+
+        monkeypatch.setattr(pandas_support, "gpd", FakeGpd)
+        coords, index = coordinates_from_df(FakeGeoDataFrame())
+        np.testing.assert_allclose(coords, [[48.85, 2.35], [51.50, -0.12]])
+        assert list(index) == [10, 20]
+
+    def test_geodataframe_branch_empty_geometry_raises(self, monkeypatch):
+        class FakeGeoDataFrame:
+            def __init__(self):
+                self.geometry = []
+                self.index = []
+
+        class FakeGpd:
+            GeoDataFrame = FakeGeoDataFrame
+
+        monkeypatch.setattr(pandas_support, "gpd", FakeGpd)
+        with pytest.raises(ValueError, match="no geometry column or is empty"):
+            coordinates_from_df(FakeGeoDataFrame())
 
 
 # ---------------------------------------------------------------------------
