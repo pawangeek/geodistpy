@@ -90,12 +90,21 @@ def coordinates_from_df(df, lat_col=None, lon_col=None):
         if lat_col is not None and lon_col is not None:
             lat_col, lon_col = str(lat_col), str(lon_col)
             if lat_col not in df.columns:
-                raise ValueError(f"lat_col '{lat_col}' not in DataFrame columns: {list(df.columns)}")
+                raise ValueError(
+                    f"lat_col '{lat_col}' not in DataFrame columns: {list(df.columns)}"
+                )
             if lon_col not in df.columns:
-                raise ValueError(f"lon_col '{lon_col}' not in DataFrame columns: {list(df.columns)}")
+                raise ValueError(
+                    f"lon_col '{lon_col}' not in DataFrame columns: {list(df.columns)}"
+                )
         else:
             # Auto-detect common column names (lat before latitude, lon before longitude)
-            for la, lo in [("lat", "lon"), ("latitude", "longitude"), ("Lat", "Lon"), ("LAT", "LON")]:
+            for la, lo in [
+                ("lat", "lon"),
+                ("latitude", "longitude"),
+                ("Lat", "Lon"),
+                ("LAT", "LON"),
+            ]:
                 if la in df.columns and lo in df.columns:
                     lat_col, lon_col = la, lo
                     break
@@ -104,7 +113,12 @@ def coordinates_from_df(df, lat_col=None, lon_col=None):
                     "Could not infer lat/lon columns. Provide lat_col and lon_col, "
                     "or use columns named 'lat'/'lon' or 'latitude'/'longitude'."
                 )
-        coords = np.column_stack([df[lat_col].values.astype(np.float64), df[lon_col].values.astype(np.float64)])
+        coords = np.column_stack(
+            [
+                df[lat_col].values.astype(np.float64),
+                df[lon_col].values.astype(np.float64),
+            ]
+        )
         return coords, df.index
 
     # Not a DataFrame/GeoDataFrame

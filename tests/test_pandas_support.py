@@ -24,7 +24,9 @@ class TestCoordinatesFromDfDataFrame:
 
     def test_auto_detect_lat_lon(self):
         pd = pytest.importorskip("pandas")
-        df = pd.DataFrame({"lat": [48.85, 51.50], "lon": [2.35, -0.12], "name": ["Paris", "London"]})
+        df = pd.DataFrame(
+            {"lat": [48.85, 51.50], "lon": [2.35, -0.12], "name": ["Paris", "London"]}
+        )
         coords, index = coordinates_from_df(df)
         assert coords.shape == (2, 2)
         np.testing.assert_allclose(coords, [[48.85, 2.35], [51.50, -0.12]])
@@ -39,10 +41,14 @@ class TestCoordinatesFromDfDataFrame:
     def test_auto_detect_prefers_lat_lon_over_latitude_longitude(self):
         pd = pytest.importorskip("pandas")
         # If both sets exist, first in list wins: ("lat", "lon")
-        df = pd.DataFrame({
-            "lat": [1.0], "lon": [2.0],
-            "latitude": [10.0], "longitude": [20.0],
-        })
+        df = pd.DataFrame(
+            {
+                "lat": [1.0],
+                "lon": [2.0],
+                "latitude": [10.0],
+                "longitude": [20.0],
+            }
+        )
         coords, _ = coordinates_from_df(df)
         np.testing.assert_allclose(coords, [[1.0, 2.0]])
 
@@ -128,12 +134,14 @@ class TestCoordinatesFromDfDataFrame:
 
     def test_extra_columns_ignored(self):
         pd = pytest.importorskip("pandas")
-        df = pd.DataFrame({
-            "lat": [48.85, 51.50],
-            "lon": [2.35, -0.12],
-            "name": ["Paris", "London"],
-            "population": [2.1e6, 8.9e6],
-        })
+        df = pd.DataFrame(
+            {
+                "lat": [48.85, 51.50],
+                "lon": [2.35, -0.12],
+                "name": ["Paris", "London"],
+                "population": [2.1e6, 8.9e6],
+            }
+        )
         coords, _ = coordinates_from_df(df)
         assert coords.shape == (2, 2)
 
@@ -296,7 +304,9 @@ class TestGeodistToManyDataFrame:
         df = pd.DataFrame({"lat": [48.8566], "lon": [2.3522]})
         result = geodist_to_many(origin, df, metric="km")
         assert len(result) == 1
-        np.testing.assert_allclose(result.values, geodist(origin, (48.8566, 2.3522), metric="km"))
+        np.testing.assert_allclose(
+            result.values, geodist(origin, (48.8566, 2.3522), metric="km")
+        )
 
     def test_explicit_lat_col_lon_col(self):
         pd = pytest.importorskip("pandas")
@@ -304,7 +314,9 @@ class TestGeodistToManyDataFrame:
         df = pd.DataFrame({"y": [48.8566], "x": [2.3522]})
         result = geodist_to_many(origin, df, lat_col="y", lon_col="x", metric="km")
         assert len(result) == 1
-        np.testing.assert_allclose(result.values, geodist(origin, (48.8566, 2.3522), metric="km"))
+        np.testing.assert_allclose(
+            result.values, geodist(origin, (48.8566, 2.3522), metric="km")
+        )
 
     def test_string_index(self):
         pd = pytest.importorskip("pandas")
@@ -342,14 +354,18 @@ class TestGeodesicKnnDataFrame:
         idx, dists = geodesic_knn((52.52, 13.40), df, k=1, metric="km")
         assert len(idx) == 1
         assert idx[0] == "Paris"
-        assert dists[0] == pytest.approx(geodist((52.52, 13.40), (48.8566, 2.3522), metric="km"), rel=1e-5)
+        assert dists[0] == pytest.approx(
+            geodist((52.52, 13.40), (48.8566, 2.3522), metric="km"), rel=1e-5
+        )
 
     def test_k_all_returns_all_sorted(self):
         pd = pytest.importorskip("pandas")
-        df = pd.DataFrame({
-            "lat": [48.8566, 40.7128, 51.5074],
-            "lon": [2.3522, -74.006, -0.1278],
-        })
+        df = pd.DataFrame(
+            {
+                "lat": [48.8566, 40.7128, 51.5074],
+                "lon": [2.3522, -74.006, -0.1278],
+            }
+        )
         idx, dists = geodesic_knn((52.52, 13.40), df, k=3, metric="km")
         assert len(dists) == 3
         assert list(dists) == sorted(dists)
@@ -357,9 +373,18 @@ class TestGeodesicKnnDataFrame:
     def test_explicit_lat_col_lon_col(self):
         pd = pytest.importorskip("pandas")
         df = pd.DataFrame({"latitude": [48.8566], "longitude": [2.3522]})
-        idx, dists = geodesic_knn((52.52, 13.40), df, k=1, metric="km", lat_col="latitude", lon_col="longitude")
+        idx, dists = geodesic_knn(
+            (52.52, 13.40),
+            df,
+            k=1,
+            metric="km",
+            lat_col="latitude",
+            lon_col="longitude",
+        )
         assert len(idx) == 1
-        assert dists[0] == pytest.approx(geodist((52.52, 13.40), (48.8566, 2.3522), metric="km"), rel=1e-5)
+        assert dists[0] == pytest.approx(
+            geodist((52.52, 13.40), (48.8566, 2.3522), metric="km"), rel=1e-5
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -409,7 +434,9 @@ class TestPointInRadiusDataFrame:
     def test_explicit_lat_col_lon_col(self):
         pd = pytest.importorskip("pandas")
         df = pd.DataFrame({"y": [48.8566], "x": [2.3522]})
-        idx, dists = point_in_radius((52.52, 13.40), df, 1000, metric="km", lat_col="y", lon_col="x")
+        idx, dists = point_in_radius(
+            (52.52, 13.40), df, 1000, metric="km", lat_col="y", lon_col="x"
+        )
         assert len(idx) == 1
 
 
@@ -422,10 +449,12 @@ class TestRoundTrip:
     def test_geodist_to_many_array_vs_dataframe_same_result(self):
         pd = pytest.importorskip("pandas")
         origin = (52.5200, 13.4050)
-        df = pd.DataFrame({
-            "lat": [48.8566, 51.5074, 40.7128],
-            "lon": [2.3522, -0.1278, -74.006],
-        })
+        df = pd.DataFrame(
+            {
+                "lat": [48.8566, 51.5074, 40.7128],
+                "lon": [2.3522, -0.1278, -74.006],
+            }
+        )
         by_df = geodist_to_many(origin, df, metric="km").values
         coords, _ = coordinates_from_df(df)
         by_array = geodist_to_many(origin, coords, metric="km")
@@ -434,10 +463,12 @@ class TestRoundTrip:
     def test_geodesic_knn_array_vs_dataframe_same_neighbors(self):
         pd = pytest.importorskip("pandas")
         query = (52.52, 13.40)
-        df = pd.DataFrame({
-            "lat": [48.8566, 40.7128, 51.5074],
-            "lon": [2.3522, -74.006, -0.1278],
-        })
+        df = pd.DataFrame(
+            {
+                "lat": [48.8566, 40.7128, 51.5074],
+                "lon": [2.3522, -74.006, -0.1278],
+            }
+        )
         idx_df, dist_df = geodesic_knn(query, df, k=2, metric="km")
         coords, index = coordinates_from_df(df)
         idx_arr, dist_arr = geodesic_knn(query, coords, k=2, metric="km")

@@ -1035,7 +1035,9 @@ def test_geodist_to_many_wrong_shape():
 def test_coordinates_from_df_pandas():
     """coordinates_from_df extracts (lat, lon) from DataFrame with lat/lon columns."""
     pd = pytest.importorskip("pandas")
-    df = pd.DataFrame({"lat": [48.85, 51.50], "lon": [2.35, -0.12], "name": ["Paris", "London"]})
+    df = pd.DataFrame(
+        {"lat": [48.85, 51.50], "lon": [2.35, -0.12], "name": ["Paris", "London"]}
+    )
     coords, index = coordinates_from_df(df)
     assert coords.shape == (2, 2)
     np.testing.assert_allclose(coords[0], [48.85, 2.35])
@@ -1055,7 +1057,9 @@ def test_geodist_to_many_with_dataframe():
     """geodist_to_many accepts DataFrame and returns Series indexed by DataFrame index."""
     pd = pytest.importorskip("pandas")
     origin = (52.5200, 13.4050)
-    df = pd.DataFrame({"lat": [48.8566, 51.5074], "lon": [2.3522, -0.1278]}, index=[10, 20])
+    df = pd.DataFrame(
+        {"lat": [48.8566, 51.5074], "lon": [2.3522, -0.1278]}, index=[10, 20]
+    )
     result = geodist_to_many(origin, df, metric="km")
     assert hasattr(result, "index")
     assert list(result.index) == [10, 20]
@@ -1066,7 +1070,9 @@ def test_geodist_to_many_with_dataframe():
 def test_geodesic_knn_with_dataframe():
     """geodesic_knn accepts DataFrame; indices are positional (use .iloc to get rows)."""
     pd = pytest.importorskip("pandas")
-    df = pd.DataFrame({"lat": [48.8566, 40.7128, 51.5074], "lon": [2.3522, -74.006, -0.1278]})
+    df = pd.DataFrame(
+        {"lat": [48.8566, 40.7128, 51.5074], "lon": [2.3522, -74.006, -0.1278]}
+    )
     idx, dists = geodesic_knn((52.5200, 13.4050), df, k=2, metric="km")
     assert len(idx) == 2
     assert len(dists) == 2
@@ -1077,7 +1083,9 @@ def test_geodesic_knn_with_dataframe():
 def test_point_in_radius_with_dataframe():
     """point_in_radius accepts DataFrame; returns indices and distances."""
     pd = pytest.importorskip("pandas")
-    df = pd.DataFrame({"lat": [48.8566, 40.7128, 51.5074], "lon": [2.3522, -74.006, -0.1278]})
+    df = pd.DataFrame(
+        {"lat": [48.8566, 40.7128, 51.5074], "lon": [2.3522, -74.006, -0.1278]}
+    )
     idx, dists = point_in_radius((52.5200, 13.4050), df, 1000, metric="km")
     assert 0 in idx
     assert 2 in idx

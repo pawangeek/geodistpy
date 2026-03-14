@@ -93,7 +93,9 @@ def run_gglib_single(n):
 
 def run_pyproj_single(n):
     for _ in range(n):
-        _geod_wgs84.inv(coord1[1], coord1[0], coord2[1], coord2[0])[2]  # lon, lat → dist m
+        _geod_wgs84.inv(coord1[1], coord1[0], coord2[1], coord2[0])[
+            2
+        ]  # lon, lat → dist m
 
 
 def run_geodistpy_single(n):
@@ -180,9 +182,7 @@ for N in [50, 100, 200]:
     print(
         f"  {'Geographiclib':<30} {fmt_time(t_gglib_m):>12}  {t_geopy_m/t_gglib_m:.1f}x"
     )
-    print(
-        f"  {'Pyproj':<30} {fmt_time(t_pyproj_m):>12}  {t_geopy_m/t_pyproj_m:.1f}x"
-    )
+    print(f"  {'Pyproj':<30} {fmt_time(t_pyproj_m):>12}  {t_geopy_m/t_pyproj_m:.1f}x")
     print(
         f"  {'Geodistpy (matrix)':<30} {fmt_time(t_gdpy_m):>12}  {t_geopy_m/t_gdpy_m:.1f}x"
     )
@@ -340,7 +340,9 @@ for N in [1_000, 10_000, 50_000]:
             f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib={fmt_time(t_r):>10}  Pyproj={fmt_time(t_pp):>10}  Speedup vs Pyproj={t_pp/t_g:.1f}x"
         )
     else:
-        print(f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib=(skipped)  Pyproj=(skipped)")
+        print(
+            f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib=(skipped)  Pyproj=(skipped)"
+        )
 
 print()
 

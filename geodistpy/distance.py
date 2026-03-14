@@ -387,7 +387,15 @@ def midpoint(point1, point2, ellipsoid="WGS-84"):
 # ---------------------------------------------------------------------------
 # Point-in-radius
 # ---------------------------------------------------------------------------
-def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None):
+def point_in_radius(
+    center,
+    candidates,
+    radius,
+    metric="meter",
+    ellipsoid="WGS-84",
+    lat_col=None,
+    lon_col=None,
+):
     """
     Find all *candidate* points that lie within a given geodesic radius
     of a *center* point on the selected ellipsoid.
@@ -429,7 +437,9 @@ def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-8
     if abs(center[0, 1]) > 180:
         raise ValueError("Longitude values must be in the range [-180, 180]")
 
-    candidates, cand_index = pandas_support._as_coords(candidates, lat_col=lat_col, lon_col=lon_col)
+    candidates, cand_index = pandas_support._as_coords(
+        candidates, lat_col=lat_col, lon_col=lon_col
+    )
     _validate_lat_lon_ranges(candidates)
 
     conv_fac = _get_conv_factor(metric)
@@ -450,7 +460,15 @@ def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-8
 # ---------------------------------------------------------------------------
 # k-Nearest Neighbours on geodesic distance
 # ---------------------------------------------------------------------------
-def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None):
+def geodesic_knn(
+    point,
+    candidates,
+    k=1,
+    metric="meter",
+    ellipsoid="WGS-84",
+    lat_col=None,
+    lon_col=None,
+):
     """
     Find the *k* nearest neighbours to *point* among *candidates* using
     exact geodesic (Vincenty) distances on the selected ellipsoid.
@@ -494,7 +512,9 @@ def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84", lat
     if abs(point[0, 1]) > 180:
         raise ValueError("Longitude values must be in the range [-180, 180]")
 
-    candidates, cand_index = pandas_support._as_coords(candidates, lat_col=lat_col, lon_col=lon_col)
+    candidates, cand_index = pandas_support._as_coords(
+        candidates, lat_col=lat_col, lon_col=lon_col
+    )
     _validate_lat_lon_ranges(candidates)
 
     n = len(candidates)
@@ -523,7 +543,9 @@ def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84", lat
 # ---------------------------------------------------------------------------
 # One-to-many distances ("how far from this user to these N stores?")
 # ---------------------------------------------------------------------------
-def geodist_to_many(origin, points, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None):
+def geodist_to_many(
+    origin, points, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None
+):
     """
     Return distances from a single *origin* to each of *points* (one-to-many).
 
@@ -559,7 +581,9 @@ def geodist_to_many(origin, points, metric="meter", ellipsoid="WGS-84", lat_col=
         raise ValueError("Latitude values must be in the range [-90, 90]")
     if abs(origin[0, 1]) > 180:
         raise ValueError("Longitude values must be in the range [-180, 180]")
-    points, points_index = pandas_support._as_coords(points, lat_col=lat_col, lon_col=lon_col)
+    points, points_index = pandas_support._as_coords(
+        points, lat_col=lat_col, lon_col=lon_col
+    )
     _validate_lat_lon_ranges(points)
     conv_fac = _get_conv_factor(metric)
     a, f = _resolve_ellipsoid(ellipsoid)
