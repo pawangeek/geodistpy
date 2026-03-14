@@ -6,6 +6,8 @@ import pytest
 from geodistpy import (
     geodist,
     geodist_matrix,
+    geodist_to_many,
+    coordinates_from_df,
     greatcircle,
     greatcircle_matrix,
     bearing,
@@ -27,6 +29,10 @@ from geodistpy.geodesic import (
     geodist_dimwise_harvesine,
     ELLIPSOIDS,
     _resolve_ellipsoid,
+    _vincenty_1to1,
+    _vincenty_one_to_many,
+    _apply_fallback_1to1,
+    _apply_fallback_one_to_many,
 )
 
 
@@ -996,6 +1002,175 @@ def test_geodesic_knn_metric():
     _, d_m = geodesic_knn(query, pts, k=1, metric="meter")
     _, d_km = geodesic_knn(query, pts, k=1, metric="km")
     assert d_m[0] == pytest.approx(d_km[0] * 1000.0, rel=1e-8)
+
+
+# ---------------------------------------------------------------------------
+# geodist_to_many
+# ---------------------------------------------------------------------------
+def test_geodist_to_many_basic():
+    """One origin to many points returns 1D array of distances."""
+    origin = (52.5200, 13.4050)
+    pts = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
+    dists = geodist_to_many(origin, pts, metric="km")
+    assert dists.shape == (3,)
+    assert dists[0] == pytest.approx(geodist(origin, pts[0], metric="km"), rel=1e-6)
+    assert dists[1] == pytest.approx(geodist(origin, pts[1], metric="km"), rel=1e-6)
+    assert dists[2] == pytest.approx(geodist(origin, pts[2], metric="km"), rel=1e-6)
+
+
+def test_geodist_to_many_equals_matrix_row():
+    """geodist_to_many(origin, points) equals geodist_matrix([origin], points)[0]."""
+    origin = (52.5200, 13.4050)
+    pts = [(48.8566, 2.3522), (51.5074, -0.1278)]
+    a = geodist_to_many(origin, pts, metric="km")
+    b = geodist_matrix([origin], pts, metric="km")[0]
+    np.testing.assert_allclose(a, b, rtol=1e-9)
+
+
+def test_geodist_to_many_wrong_shape():
+    """ValueError for points with wrong shape."""
+    with pytest.raises(ValueError):
+        geodist_to_many((0.0, 0.0), [(0.0,)], metric="km")
+
+
+def test_geodist_to_many_invalid_origin():
+    """ValueError for out-of-range origin coordinates."""
+    with pytest.raises(ValueError, match="Latitude values must be in the range"):
+        geodist_to_many((95.0, 0.0), [(0.0, 0.0)], metric="km")
+
+
+def test_geodist_to_many_invalid_points_longitude():
+    """ValueError for out-of-range point longitudes in one-to-many."""
+    with pytest.raises(ValueError, match="Longitude values must be in the range"):
+        geodist_to_many((0.0, 0.0), [(0.0, 181.0)], metric="km")
+
+
+def test_point_in_radius_invalid_candidates_latitude():
+    """ValueError for invalid candidate latitude in point_in_radius."""
+    with pytest.raises(ValueError, match="Latitude values must be in the range"):
+        point_in_radius((0.0, 0.0), [(91.0, 0.0)], 100, metric="km")
+
+
+def test_geodesic_knn_invalid_candidates_longitude():
+    """ValueError for invalid candidate longitude in geodesic_knn."""
+    with pytest.raises(ValueError, match="Longitude values must be in the range"):
+        geodesic_knn((0.0, 0.0), [(0.0, 181.0)], k=1, metric="km")
+
+
+def test_vincenty_1to1_matches_elementwise_vincenty():
+    """Internal one-to-one kernel should match scalar Vincenty calls."""
+    coords1 = np.ascontiguousarray(
+        np.array([[52.52, 13.405], [40.7128, -74.0060], [0.0, 0.0]], dtype=np.float64)
+    )
+    coords2 = np.ascontiguousarray(
+        np.array(
+            [[48.8566, 2.3522], [34.0522, -118.2437], [0.0, 90.0]], dtype=np.float64
+        )
+    )
+    dist = _vincenty_1to1(coords1, coords2)
+    expected = np.array(
+        [geodesic_vincenty(coords1[i], coords2[i]) for i in range(len(coords1))]
+    )
+    np.testing.assert_allclose(dist, expected, rtol=1e-10)
+
+
+def test_vincenty_one_to_many_matches_elementwise_vincenty():
+    """Internal one-to-many kernel should match scalar Vincenty calls."""
+    origin = np.ascontiguousarray(np.array([52.52, 13.405], dtype=np.float64))
+    coords = np.ascontiguousarray(
+        np.array(
+            [[48.8566, 2.3522], [51.5074, -0.1278], [40.7128, -74.0060]],
+            dtype=np.float64,
+        )
+    )
+    dist = _vincenty_one_to_many(origin, coords)
+    expected = np.array(
+        [geodesic_vincenty(origin, coords[i]) for i in range(len(coords))]
+    )
+    np.testing.assert_allclose(dist, expected, rtol=1e-10)
+
+
+def test_apply_fallback_1to1_replaces_sentinel_values():
+    """Fallback helper should replace -1 sentinel with valid distance."""
+    coords1 = np.array([[0.0, 0.0], [52.52, 13.405]], dtype=np.float64)
+    coords2 = np.array([[0.0, 179.9999], [48.8566, 2.3522]], dtype=np.float64)
+    dist = np.array([-1.0, 123.45], dtype=np.float64)
+    out = _apply_fallback_1to1(dist.copy(), coords1, coords2)
+    assert out[0] > 0.0
+    assert out[1] == pytest.approx(123.45)
+
+
+def test_apply_fallback_one_to_many_replaces_sentinel_values():
+    """One-to-many fallback helper should replace -1 sentinel values only."""
+    origin = np.array([52.52, 13.405], dtype=np.float64)
+    coords = np.array([[48.8566, 2.3522], [0.0, 179.9999]], dtype=np.float64)
+    dist = np.array([111.0, -1.0], dtype=np.float64)
+    out = _apply_fallback_one_to_many(dist.copy(), origin, coords)
+    assert out[0] == pytest.approx(111.0)
+    assert out[1] > 0.0
+
+
+# ---------------------------------------------------------------------------
+# Pandas / DataFrame support (optional; skipped if pandas not installed)
+# ---------------------------------------------------------------------------
+def test_coordinates_from_df_pandas():
+    """coordinates_from_df extracts (lat, lon) from DataFrame with lat/lon columns."""
+    pd = pytest.importorskip("pandas")
+    df = pd.DataFrame(
+        {"lat": [48.85, 51.50], "lon": [2.35, -0.12], "name": ["Paris", "London"]}
+    )
+    coords, index = coordinates_from_df(df)
+    assert coords.shape == (2, 2)
+    np.testing.assert_allclose(coords[0], [48.85, 2.35])
+    np.testing.assert_allclose(coords[1], [51.50, -0.12])
+    assert list(index) == [0, 1]
+
+
+def test_coordinates_from_df_explicit_columns():
+    """coordinates_from_df accepts explicit lat_col, lon_col."""
+    pd = pytest.importorskip("pandas")
+    df = pd.DataFrame({"latitude": [48.85], "longitude": [2.35]})
+    coords, _ = coordinates_from_df(df, lat_col="latitude", lon_col="longitude")
+    np.testing.assert_allclose(coords, [[48.85, 2.35]])
+
+
+def test_geodist_to_many_with_dataframe():
+    """geodist_to_many accepts DataFrame and returns Series indexed by DataFrame index."""
+    pd = pytest.importorskip("pandas")
+    origin = (52.5200, 13.4050)
+    df = pd.DataFrame(
+        {"lat": [48.8566, 51.5074], "lon": [2.3522, -0.1278]}, index=[10, 20]
+    )
+    result = geodist_to_many(origin, df, metric="km")
+    assert hasattr(result, "index")
+    assert list(result.index) == [10, 20]
+    expected = geodist_to_many(origin, df[["lat", "lon"]].values, metric="km")
+    np.testing.assert_allclose(result.values, expected)
+
+
+def test_geodesic_knn_with_dataframe():
+    """geodesic_knn accepts DataFrame; indices are positional (use .iloc to get rows)."""
+    pd = pytest.importorskip("pandas")
+    df = pd.DataFrame(
+        {"lat": [48.8566, 40.7128, 51.5074], "lon": [2.3522, -74.006, -0.1278]}
+    )
+    idx, dists = geodesic_knn((52.5200, 13.4050), df, k=2, metric="km")
+    assert len(idx) == 2
+    assert len(dists) == 2
+    # Paris (0) and London (2) are nearest
+    assert set(idx) == {0, 2}
+
+
+def test_point_in_radius_with_dataframe():
+    """point_in_radius accepts DataFrame; returns indices and distances."""
+    pd = pytest.importorskip("pandas")
+    df = pd.DataFrame(
+        {"lat": [48.8566, 40.7128, 51.5074], "lon": [2.3522, -74.006, -0.1278]}
+    )
+    idx, dists = point_in_radius((52.5200, 13.4050), df, 1000, metric="km")
+    assert 0 in idx
+    assert 2 in idx
+    assert 1 not in idx
 
 
 # ===========================================================================

@@ -12,6 +12,10 @@ This guide covers two spatial query operations that use exact geodesic (Vincenty
 
 These fill an important gap: popular tools like scikit-learn's `BallTree` only support the haversine metric (spherical approximation), which can introduce errors of up to ~0.3% compared to true ellipsoidal distances.
 
+**One-to-many distances:** If you only need "how far from this point to each of these?" use **`geodist_to_many(origin, points, ...)`** — it returns a 1D array (or a pandas Series when *points* is a DataFrame). See [Pandas & GeoPandas Support](pandas-support.md) for DataFrame usage and the after-geocoding workflow.
+
+**Pandas / GeoPandas:** You can pass **pandas DataFrames** or **GeoPandas GeoDataFrames** as *candidates* (or *points*) to `geodesic_knn`, `point_in_radius`, and `geodist_to_many`. Results are then aligned with the DataFrame index. Install with `pip install geodistpy[pandas]` or `geodistpy[geopandas]`. Full details in [Pandas & GeoPandas Support](pandas-support.md).
+
 ## k-Nearest Neighbours (geodesic_knn)
 
 ### Why Geodesic k-NN?
@@ -275,10 +279,11 @@ For most k-NN and radius queries, the **ranking** is what matters. In cases wher
 
 | Operation | 10 candidates | 100 candidates | 1,000 candidates |
 |-----------|--------------|----------------|-------------------|
+| `geodist_to_many` | ~5 µs | ~50 µs | ~500 µs |
 | `geodesic_knn` | ~5 µs | ~50 µs | ~500 µs |
 | `point_in_radius` | ~5 µs | ~50 µs | ~500 µs |
 
-Both functions compute distances sequentially (one Vincenty call per candidate). For very large candidate sets (>100,000 points), consider:
+These functions use a single row of the internal distance matrix (Numba-parallel cdist), so they scale with the number of candidates. For very large candidate sets (>100,000 points), consider:
 
 1. **Pre-filtering** with a bounding box on lat/lon before calling these functions
 2. Using `geodist_matrix` for batch computation when you need all pairwise distances

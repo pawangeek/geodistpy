@@ -6,11 +6,26 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/geodistpy?label=Python&logo=Python&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-Geodistpy is a powerful Python library designed for lightning-fast geospatial distance computations. In this README, we'll compare Geodistpy with two other popular libraries, Geopy and Geographiclib, to highlight the significant performance advantages of Geodistpy.
+Geodistpy is a powerful Python library designed for lightning-fast geospatial distance computations. In this README, we'll compare Geodistpy with three other popular libraries, Geopy, Geographiclib, and Pyproj, to highlight the significant performance advantages of Geodistpy.
+
+**Features:** Vincenty geodesic (sub-millimeter accuracy) · Great circle with Andoyer-Lambert · Bearing & destination · Geodesic interpolation & midpoint · k-NN and point-in-radius · **Pandas & GeoPandas support** (pass DataFrames directly; optional `[pandas]` / `[geopandas]` extras)
 
 * Documentation: https://pawangeek.github.io/geodistpy/
 * Github Repo: https://github.com/pawangeek/geodistpy
 * PyPI: https://pypi.org/project/geodistpy/
+
+## Installation
+
+```bash
+pip install geodistpy
+```
+
+Optional extras for **pandas** and **GeoPandas** (DataFrame/GeoDataFrame support for `geodist_to_many`, `geodesic_knn`, `point_in_radius`, and `coordinates_from_df`):
+
+```bash
+pip install geodistpy[pandas]       # pandas DataFrame
+pip install geodistpy[geopandas]    # GeoPandas GeoDataFrame (includes pandas)
+```
 
 ## Speed Comparison
 
@@ -40,28 +55,32 @@ print(f"Geographiclib: {distance_gglib} meters")
 print(f"Geodistpy: {distance_geodistpy} meters")
 ```
 
-We conducted a thorough benchmark comparing Geodistpy, Geopy, and Geographiclib across multiple scenarios: single-pair calls, pairwise distance matrices, accuracy analysis, edge cases, and scaling tests.
+We conducted a thorough benchmark comparing Geodistpy, Geopy, Geographiclib, and Pyproj across multiple scenarios: single-pair calls, pairwise distance matrices, accuracy analysis, edge cases, and scaling tests.
+
+> Latest benchmark snapshot (from `poetry run python benchmark.py`, Mar 14, 2026).
 
 ### Test 1: Single Pair Distance (10,000 calls, best of 3)
 
 | Library | Total Time | Per Call |
 |---|---|---|
-| Geopy | 622 ms | ~62 µs |
-| Geographiclib | 376 ms | ~38 µs |
-| **Geodistpy (Vincenty+Numba)** | **3.50 ms** | **~0.4 µs** |
+| Geopy | 619 ms | ~62 µs |
+| Geographiclib | 396 ms | ~40 µs |
+| Pyproj (`Geod.inv`) | 5.42 ms | ~0.5 µs |
+| **Geodistpy (Vincenty+Numba)** | **3.78 ms** | **~0.4 µs** |
 
-- **Geodistpy is 178x faster than Geopy**
-- **Geodistpy is 107x faster than Geographiclib**
+- **Geodistpy is 164x faster than Geopy**
+- **Geodistpy is 105x faster than Geographiclib**
+- **Geodistpy is 1.4x faster than Pyproj**
 
 ### Test 2: Pairwise Distance Matrix (N×N)
 
 Geodistpy uses Numba-parallel loops (`prange`) instead of scipy callbacks, yielding massive speedups for matrix operations:
 
-| N (points) | Unique Pairs | Geopy | Geographiclib | Geodistpy | Speedup vs Geopy |
-|---|---|---|---|---|---|
-| 50 | 1,225 | 82 ms | 54 ms | **4.8 ms** | **17x** |
-| 100 | 4,950 | 422 ms | 225 ms | **0.52 ms** | **813x** |
-| 200 | 19,900 | 1.36 s | 868 ms | **1.16 ms** | **1,173x** |
+| N (points) | Unique Pairs | Geopy | Geographiclib | Pyproj | Geodistpy | vs Geopy |
+|---|---|---|---|---|---|---|
+| 50 | 1,225 | 83 ms | 56 ms | 0.91 ms | **4.85 ms** | **17x** |
+| 100 | 4,950 | 339 ms | 231 ms | 3.60 ms | **0.48 ms** | **702x** |
+| 200 | 19,900 | 1.43 s | 930 ms | 14.59 ms | **1.21 ms** | **1,183x** |
 
 ### Test 3: Accuracy (Geographiclib as reference, 5,000 random pairs)
 
@@ -69,6 +88,7 @@ Geodistpy uses Numba-parallel loops (`prange`) instead of scipy callbacks, yield
 |---|---|---|---|---|
 | **Geodistpy (Vincenty)** | **0.000009** | **0.000108** | **1.03e-12** | **1.24e-10** |
 | Geopy (geodesic) | 0.000000 | 0.000000 | 4.40e-17 | 2.26e-16 |
+| Pyproj (`Geod.inv`) | 0.000000 | 0.000000 | 4.72e-17 | 4.92e-15 |
 | **Geodistpy (Great Circle)** | **19.23** | **462.88** | **2.34e-06** | **2.40e-05** |
 
 > **Note on error values:** Geopy shows zero error because it is a direct wrapper around Geographiclib — comparing it to Geographiclib is comparing the same algorithm to itself. Geodistpy's Vincenty mean error of **0.000009m (9 micrometers)** is a negligible difference arising from using a different geodesic algorithm (Vincenty's inverse vs Karney's). This is far below any practical GPS or measurement precision. The Great Circle method uses an **Andoyer-Lambert flattening correction** on top of the spherical formula, reducing error from ~13 km (pure sphere) to **~19 m** — a **700x improvement** while remaining nearly as fast.
@@ -93,29 +113,29 @@ All edge cases — including antipodal points, poles, date line crossings, and v
 
 ### Test 5: Scaling (Sequential point-to-point calls)
 
-| N calls | Geodistpy | Geographiclib | Speedup |
-|---|---|---|---|
-| 1,000 | 0.49 ms | 46 ms | **93x** |
-| 10,000 | 5.24 ms | 475 ms | **91x** |
-| 50,000 | 24.4 ms | *(skipped)* | — |
+| N calls | Geodistpy | Geographiclib | Pyproj | Geodistpy vs Pyproj |
+|---|---|---|---|---|
+| 1,000 | 0.55 ms | 45 ms | 0.74 ms | **1.3x faster** |
+| 10,000 | 5.40 ms | 460 ms | 7.44 ms | **1.4x faster** |
+| 50,000 | 26.1 ms | *(skipped)* | *(skipped)* | — |
 
 ### Test 6: Great Circle vs Geodesic Trade-off
 
 | Method | Time (10,000 calls) | Mean Error | Use Case |
 |---|---|---|---|
-| Great Circle + Andoyer-Lambert (Numba) | 2.86 ms | **~19 m** | Fast with good accuracy |
-| Vincenty Geodesic (Numba) | 4.74 ms | ~0.009 mm | Maximum precision |
+| Great Circle + Andoyer-Lambert (Numba) | 2.99 ms | **~19 m** | Fast with good accuracy |
+| Vincenty Geodesic (Numba) | 4.93 ms | ~0.009 mm | Maximum precision |
 
-Great Circle with Andoyer-Lambert correction is **1.7x faster** than Vincenty with only **~19 m average error** — a **700x improvement** over the previous pure spherical approach (~13.5 km error).
+Great Circle with Andoyer-Lambert correction is **1.6x faster** than Vincenty with only **~19 m average error** — a **700x improvement** over the previous pure spherical approach (~13.5 km error).
 
 ## Performance Summary
 
-- **Single-pair:** Geodistpy is **178x faster than Geopy**, **107x faster than Geographiclib** (~0.4 µs/call).
-- **Matrix (N=200):** Geodistpy is **1,173x faster than Geopy**, **746x faster than Geographiclib** (1.16 ms for 19,900 pairs).
+- **Single-pair:** Geodistpy is **164x faster than Geopy**, **105x faster than Geographiclib**, and **1.4x faster than Pyproj** (~0.4 µs/call).
+- **Matrix (N=200):** Geodistpy is **1,183x faster than Geopy**, **770x faster than Geographiclib**, and **12.1x faster than Pyproj** (1.21 ms for 19,900 pairs).
 - Vincenty: **sub-millimeter accuracy** (mean error = 9 µm vs Geographiclib reference).
 - Great Circle: **~19 m mean accuracy** with Andoyer-Lambert flattening correction (700x better than pure sphere).
 - All edge cases handled correctly: antipodal points, poles, date line, short distances.
-- Per-call cost: **~0.4 µs** (Geodistpy) vs ~38 µs (Geographiclib) vs ~62 µs (Geopy).
+- Per-call cost: **~0.4 µs** (Geodistpy) vs ~0.5 µs (Pyproj) vs ~40 µs (Geographiclib) vs ~62 µs (Geopy).
 
 ## Context and Background
 
@@ -124,6 +144,84 @@ The Python package `geodistpy` is a versatile library designed for geospatial ca
 ## Why it was Created
 
 The package was created to simplify and standardize geospatial distance calculations. Geographical distance calculations can be complex due to the curvature of the Earth's surface, and this library abstracts away those complexities, allowing users to focus on their specific geospatial tasks.
+
+## After geocoding: distance and nearest-neighbor
+
+Geocoding (address → lat/lon) is often the first step—with [geopy](https://geopy.readthedocs.io/) or any other geocoder. The next step is usually **"How far from this user to these N stores?"** or **"Which store is nearest?"** Geodistpy is built for that: once you have coordinates, do all distance and nearest-neighbor work **fast** with geodesic accuracy.
+
+```python
+# 1. Get coordinates (e.g. from geopy, your API, or a database)
+from geopy.geocoders import Nominatim
+geolocator = Nominatim(user_agent="my_app")
+user_location = geolocator.geocode("Alexanderplatz, Berlin")
+user = (user_location.latitude, user_location.longitude)
+
+# 2. Your store locations (lat, lon)
+stores = [
+    (52.5200, 13.4050),   # Berlin
+    (48.8566, 2.3522),    # Paris
+    (51.5074, -0.1278),   # London
+]
+
+# 3. How far from this user to each store? (one-to-many)
+from geodistpy import geodist_to_many
+distances_km = geodist_to_many(user, stores, metric="km")
+
+# 4. Which store is nearest? (k-NN)
+from geodistpy import geodesic_knn
+nearest_idx, nearest_dists = geodesic_knn(user, stores, k=1, metric="km")
+
+# 5. Which stores are within 500 km? (point-in-radius)
+from geodistpy import point_in_radius
+within_idx, within_dists = point_in_radius(user, stores, 500, metric="km")
+```
+
+No projection, no haversine hacks—just fast geodesic (Vincenty) on WGS84.
+
+## Pandas / GeoPandas support
+
+You can pass **pandas DataFrames** or **GeoPandas GeoDataFrames** directly to the functions that take points or candidates. Install the optional dependency:
+
+```bash
+pip install geodistpy[pandas]      # for pandas DataFrame
+pip install geodistpy[geopandas]    # for GeoDataFrame (includes pandas)
+```
+
+- **DataFrame:** Use columns named `lat`/`lon` or `latitude`/`longitude`, or pass `lat_col` and `lon_col`.
+- **GeoDataFrame:** Point geometry is used (WGS84: x=lon, y=lat).
+
+**Example with pandas:**
+
+```python
+import pandas as pd
+from geodistpy import geodist_to_many, geodesic_knn, point_in_radius, coordinates_from_df
+
+# DataFrame with lat/lon columns
+stores_df = pd.DataFrame({
+    "lat": [48.8566, 51.5074, 40.7128],
+    "lon": [2.3522, -0.1278, -74.006],
+    "name": ["Paris", "London", "New York"],
+})
+
+# One-to-many distances — returns a Series indexed like your DataFrame
+user = (52.52, 13.40)
+distances = geodist_to_many(user, stores_df, metric="km")
+
+# k nearest (pass DataFrame; get back indices and distances)
+idx, dists = geodesic_knn(user, stores_df, k=2, metric="km")
+nearest_stores = stores_df.iloc[idx]
+
+# All stores within 1000 km
+idx, dists = point_in_radius(user, stores_df, 1000, metric="km")
+within = stores_df.loc[idx]
+```
+
+**Extract coordinates only** (e.g. for `geodist_matrix` or custom use):
+
+```python
+coords, index = coordinates_from_df(stores_df)
+# coords is (n, 2) array of (lat, lon); index is stores_df.index
+```
 
 ## Examples and Approaches
 
@@ -279,7 +377,7 @@ print(f"2 nearest: indices {idx}, distances {dists.round(1)} km")
 
 ## Conclusion
 
-For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over both Geopy and Geographiclib, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.
+For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over Geopy, Geographiclib, and (in most tested paths) Pyproj, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.
 
 By adopting Geodistpy, you can significantly enhance the efficiency and performance of your geospatial projects. It is a valuable tool for geospatial professionals and developers seeking both speed and accuracy in their distance computations.
 

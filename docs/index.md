@@ -1,6 +1,6 @@
 ---
 title: Geodistpy – Fast Geodesic Distance Calculations in Python
-description: Geodistpy is a blazing-fast Python library for geodesic distance calculations on the WGS84 ellipsoid. Up to 171x faster than Geopy with sub-millimeter accuracy.
+description: Geodistpy is a blazing-fast Python library for geodesic distance calculations on the WGS84 ellipsoid. Up to 164x faster than Geopy with sub-millimeter accuracy.
 ---
 
 # Geodistpy Documentation
@@ -13,8 +13,9 @@ Welcome to the documentation for the `geodistpy` project — a high-performance 
 2. [Bearing & Destination](bearing-destination.md) — Forward azimuth and Vincenty direct/inverse
 3. [Interpolation & Midpoints](interpolation.md) — Geodesic waypoints and path generation
 4. [Spatial Queries](spatial-queries.md) — k-NN and point-in-radius on the ellipsoid
-5. [API Reference](api-reference.md) — Complete function reference
-6. [Benchmarks & Internals](explanation.md) — Performance benchmarks and implementation details
+5. [Pandas & GeoPandas Support](pandas-support.md) — DataFrames, one-to-many distances, and after-geocoding workflow
+6. [API Reference](api-reference.md) — Complete function reference
+7. [Benchmarks & Internals](explanation.md) — Performance benchmarks and implementation details
 
 ## Introduction
 
@@ -22,14 +23,16 @@ The `geodistpy` package is a versatile library for geospatial calculations, offe
 
 ### Key Features
 
-- **Blazing fast:** ~0.4 µs per distance call — up to **171x faster than Geopy**, **109x faster than Geographiclib**
-- **Parallel matrix computation:** Up to **1,230x faster** than Geopy for pairwise distance matrices using Numba parallel execution
+- **Blazing fast:** ~0.4 µs per distance call — up to **164x faster than Geopy**, **105x faster than Geographiclib**
+- **Parallel matrix computation:** Up to **1,183x faster** than Geopy for pairwise distance matrices using Numba parallel execution
 - **Sub-millimeter accuracy:** Vincenty's inverse formula with mean error of just 9 µm vs Geographiclib reference
 - **Improved Great Circle:** Andoyer-Lambert flattening correction reduces spherical approximation error by **700x** (from ~13 km to ~19 m)
 - **Edge case handling:** Antipodal points, poles, date line crossings, and very short distances all handled correctly
 - **Bearing & destination:** Compute forward azimuth between points and find destination given start + bearing + distance (Vincenty inverse/direct pair)
 - **Geodesic interpolation:** Generate evenly-spaced waypoints and midpoints along geodesics for routing and visualization
 - **Spatial queries:** Point-in-radius filtering (geofencing) and k-nearest-neighbour search using exact ellipsoidal distances
+- **One-to-many distances:** `geodist_to_many(origin, points)` — “how far from this user to these N stores?”
+- **Pandas & GeoPandas:** Pass DataFrames or GeoDataFrames directly; get Series or index-aligned results (optional dependency)
 - **Multiple ellipsoids:** Built-in support for WGS-84, GRS-80, Airy 1830, Intl 1924, Clarke 1880, GRS-67, or pass any custom `(a, f)` tuple
 
 ## Quick Example
@@ -57,8 +60,12 @@ print(f"Destination: ({lat:.4f}, {lon:.4f})")
 mid = midpoint(berlin, paris)
 print(f"Midpoint: ({mid[0]:.4f}, {mid[1]:.4f})")
 
-# k-NN: find 2 nearest cities to Berlin
+# One-to-many: distances from Berlin to each city
+from geodistpy import geodist_to_many
 cities = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
+dists = geodist_to_many(berlin, cities, metric='km')
+
+# k-NN: find 2 nearest cities to Berlin
 idx, dists = geodesic_knn(berlin, cities, k=2, metric='km')
 print(f"2 nearest: {idx}, distances: {dists.round(1)} km")
 ```

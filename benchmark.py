@@ -1,5 +1,5 @@
 """
-Thorough benchmark comparison: geodistpy vs geopy vs geographiclib
+Thorough benchmark comparison: geodistpy vs geopy vs geographiclib vs pyproj
 
 Tests:
 1. Single pair distance computation (point-to-point)
@@ -16,12 +16,16 @@ import numpy as np
 # ── Libraries under test ─────────────────────────────────────────────
 from geopy.distance import geodesic as geodesic_geopy
 from geographiclib.geodesic import Geodesic as geodesic_gglib
+from pyproj import Geod as Geod_pyproj
 from geodistpy.geodesic import (
     geodesic_vincenty,
     geodesic_vincenty_inverse,
     great_circle,
 )
 from geodistpy.distance import geodist, geodist_matrix
+
+# pyproj uses (lon, lat) order; our coords are (lat, lon)
+_geod_wgs84 = Geod_pyproj(ellps="WGS84")
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -87,6 +91,13 @@ def run_gglib_single(n):
         geodesic_gglib.WGS84.Inverse(coord1[0], coord1[1], coord2[0], coord2[1])["s12"]
 
 
+def run_pyproj_single(n):
+    for _ in range(n):
+        _geod_wgs84.inv(coord1[1], coord1[0], coord2[1], coord2[0])[
+            2
+        ]  # lon, lat → dist m
+
+
 def run_geodistpy_single(n):
     for _ in range(n):
         geodesic_vincenty(coord1, coord2)
@@ -94,6 +105,7 @@ def run_geodistpy_single(n):
 
 t_geopy, _ = time_func(run_geopy_single, N_single, repeats=3)
 t_gglib, _ = time_func(run_gglib_single, N_single, repeats=3)
+t_pyproj, _ = time_func(run_pyproj_single, N_single, repeats=3)
 t_gdpy, _ = time_func(run_geodistpy_single, N_single, repeats=3)
 
 print(f"  {'Library':<30} {'Total Time':>12}  {'Per Call':>12}")
@@ -103,11 +115,15 @@ print(
     f"  {'Geographiclib':<30} {fmt_time(t_gglib):>12}  {fmt_time(t_gglib/N_single):>12}"
 )
 print(
+    f"  {'Pyproj (Geod.inv)':<30} {fmt_time(t_pyproj):>12}  {fmt_time(t_pyproj/N_single):>12}"
+)
+print(
     f"  {'Geodistpy (Vincenty+Numba)':<30} {fmt_time(t_gdpy):>12}  {fmt_time(t_gdpy/N_single):>12}"
 )
 print()
 print(f"  Geodistpy is {t_geopy/t_gdpy:.1f}x faster than Geopy")
 print(f"  Geodistpy is {t_gglib/t_gdpy:.1f}x faster than Geographiclib")
+print(f"  Geodistpy is {t_pyproj/t_gdpy:.1f}x faster than Pyproj")
 print()
 
 
@@ -144,22 +160,40 @@ for N in [50, 100, 200]:
                 )
         return dists
 
+    def run_pyproj_matrix():
+        dists = []
+        for i in range(len(coords)):
+            for j in range(i + 1, len(coords)):
+                _, _, d = _geod_wgs84.inv(
+                    coords[i][1], coords[i][0], coords[j][1], coords[j][0]
+                )
+                dists.append(d)
+        return dists
+
     def run_geodistpy_matrix():
         return geodist_matrix(coords, metric="meter")
 
     t_geopy_m, _ = time_func(run_geopy_matrix, repeats=1)
     t_gglib_m, _ = time_func(run_gglib_matrix, repeats=1)
+    t_pyproj_m, _ = time_func(run_pyproj_matrix, repeats=1)
     t_gdpy_m, _ = time_func(run_geodistpy_matrix, repeats=1)
 
     print(f"  {'Geopy':<30} {fmt_time(t_geopy_m):>12}  {'(baseline)':>10}")
     print(
         f"  {'Geographiclib':<30} {fmt_time(t_gglib_m):>12}  {t_geopy_m/t_gglib_m:.1f}x"
     )
+    print(f"  {'Pyproj':<30} {fmt_time(t_pyproj_m):>12}  {t_geopy_m/t_pyproj_m:.1f}x")
     print(
         f"  {'Geodistpy (matrix)':<30} {fmt_time(t_gdpy_m):>12}  {t_geopy_m/t_gdpy_m:.1f}x"
     )
+    speedup_pyproj = t_pyproj_m / t_gdpy_m
+    vs_pyproj = (
+        f"{speedup_pyproj:.1f}x faster than Pyproj"
+        if speedup_pyproj >= 1
+        else f"Pyproj is {1/speedup_pyproj:.1f}x faster than Geodistpy"
+    )
     print(
-        f"  → Geodistpy is {t_geopy_m/t_gdpy_m:.0f}x faster than Geopy, {t_gglib_m/t_gdpy_m:.0f}x faster than Geographiclib"
+        f"  → Geodistpy is {t_geopy_m/t_gdpy_m:.0f}x faster than Geopy, {t_gglib_m/t_gdpy_m:.0f}x faster than Geographiclib, {vs_pyproj}"
     )
 
 print()
@@ -180,6 +214,7 @@ coords_b = random_coords(N_acc, seed=200)
 dists_gglib_arr = []
 dists_gdpy_arr = []
 dists_geopy_arr = []
+dists_pyproj_arr = []
 dists_gc_arr = []
 
 for i in range(N_acc):
@@ -187,23 +222,28 @@ for i in range(N_acc):
     d_ref = geodesic_gglib.WGS84.Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
     d_gdpy = geodesic_vincenty(p1, p2)
     d_geopy = geodesic_geopy(p1, p2).meters
+    _, _, d_pyproj = _geod_wgs84.inv(p1[1], p1[0], p2[1], p2[0])
     d_gc = great_circle(p1, p2)
     dists_gglib_arr.append(d_ref)
     dists_gdpy_arr.append(d_gdpy)
     dists_geopy_arr.append(d_geopy)
+    dists_pyproj_arr.append(d_pyproj)
     dists_gc_arr.append(d_gc)
 
 dists_gglib_arr = np.array(dists_gglib_arr)
 dists_gdpy_arr = np.array(dists_gdpy_arr)
 dists_geopy_arr = np.array(dists_geopy_arr)
+dists_pyproj_arr = np.array(dists_pyproj_arr)
 dists_gc_arr = np.array(dists_gc_arr)
 
 err_gdpy = np.abs(dists_gdpy_arr - dists_gglib_arr)
 err_geopy = np.abs(dists_geopy_arr - dists_gglib_arr)
+err_pyproj = np.abs(dists_pyproj_arr - dists_gglib_arr)
 err_gc = np.abs(dists_gc_arr - dists_gglib_arr)
 
 rel_err_gdpy = err_gdpy / np.maximum(dists_gglib_arr, 1e-10)
 rel_err_geopy = err_geopy / np.maximum(dists_gglib_arr, 1e-10)
+rel_err_pyproj = err_pyproj / np.maximum(dists_gglib_arr, 1e-10)
 rel_err_gc = err_gc / np.maximum(dists_gglib_arr, 1e-10)
 
 print(
@@ -215,6 +255,9 @@ print(
 )
 print(
     f"  {'Geopy (geodesic)':<30} {err_geopy.mean():>14.6f} {err_geopy.max():>14.6f} {rel_err_geopy.mean():>14.2e} {rel_err_geopy.max():>14.2e}"
+)
+print(
+    f"  {'Pyproj (Geod.inv)':<30} {err_pyproj.mean():>14.6f} {err_pyproj.max():>14.6f} {rel_err_pyproj.mean():>14.2e} {rel_err_pyproj.max():>14.2e}"
 )
 print(
     f"  {'Geodistpy (Great Circle)':<30} {err_gc.mean():>14.2f} {err_gc.max():>14.2f} {rel_err_gc.mean():>14.2e} {rel_err_gc.max():>14.2e}"
@@ -247,17 +290,18 @@ edge_cases = [
 ]
 
 print(
-    f"\n  {'Scenario':<30} {'Geographiclib':>16} {'Geodistpy':>16} {'Geopy':>16} {'Δ gdpy (m)':>12}"
+    f"\n  {'Scenario':<30} {'Geographiclib':>14} {'Geodistpy':>14} {'Geopy':>14} {'Pyproj':>14} {'Δ gdpy (m)':>12}"
 )
-print(f"  {'─'*30} {'─'*16} {'─'*16} {'─'*16} {'─'*12}")
+print(f"  {'─'*30} {'─'*14} {'─'*14} {'─'*14} {'─'*14} {'─'*12}")
 
 for name, p1, p2 in edge_cases:
     d_ref = geodesic_gglib.WGS84.Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
     d_gdpy = geodesic_vincenty(p1, p2)
     d_geopy = geodesic_geopy(p1, p2).meters
+    _, _, d_pyproj = _geod_wgs84.inv(p1[1], p1[0], p2[1], p2[0])
     delta = abs(d_gdpy - d_ref)
     print(
-        f"  {name:<30} {d_ref:>16.3f} {d_gdpy:>16.3f} {d_geopy:>16.3f} {delta:>12.6f}"
+        f"  {name:<30} {d_ref:>14.3f} {d_gdpy:>14.3f} {d_geopy:>14.3f} {d_pyproj:>14.3f} {delta:>12.6f}"
     )
 
 print()
@@ -283,15 +327,22 @@ for N in [1_000, 10_000, 50_000]:
         for i in range(N):
             geodesic_gglib.WGS84.Inverse(cx[i][0], cx[i][1], cy[i][0], cy[i][1])["s12"]
 
+    def run_pyproj_scale():
+        for i in range(N):
+            _geod_wgs84.inv(cx[i][1], cx[i][0], cy[i][1], cy[i][0])[2]
+
     t_g, _ = time_func(run_gdpy, repeats=1)
 
     if N <= 10_000:
         t_r, _ = time_func(run_gglib, repeats=1)
+        t_pp, _ = time_func(run_pyproj_scale, repeats=1)
         print(
-            f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib={fmt_time(t_r):>10}  Speedup={t_r/t_g:.1f}x"
+            f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib={fmt_time(t_r):>10}  Pyproj={fmt_time(t_pp):>10}  Speedup vs Pyproj={t_pp/t_g:.1f}x"
         )
     else:
-        print(f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib=(skipped)")
+        print(
+            f"  N={N:>6,}: Geodistpy={fmt_time(t_g):>10}  Geographiclib=(skipped)  Pyproj=(skipped)"
+        )
 
 print()
 
@@ -346,11 +397,13 @@ print(f"""
   Single-pair performance (10,000 calls):
   • Geodistpy is {t_geopy/t_gdpy:.0f}x faster than Geopy
   • Geodistpy is {t_gglib/t_gdpy:.0f}x faster than Geographiclib
-  • Per-call: Geodistpy ~{t_gdpy/N_single*1e6:.1f}µs vs Geopy ~{t_geopy/N_single*1e6:.0f}µs vs Geographiclib ~{t_gglib/N_single*1e6:.0f}µs
+  • Geodistpy is {t_pyproj/t_gdpy:.1f}x faster than Pyproj
+  • Per-call: Geodistpy ~{t_gdpy/N_single*1e6:.1f}µs vs Geopy ~{t_geopy/N_single*1e6:.0f}µs vs Geographiclib ~{t_gglib/N_single*1e6:.0f}µs vs Pyproj ~{t_pyproj/N_single*1e6:.1f}µs
 
   Accuracy (vs Geographiclib reference, {N_acc} pairs):
   • Geodistpy Vincenty:     mean err = {err_gdpy.mean():.6f}m, max = {err_gdpy.max():.6f}m
   • Geopy:                  mean err = {err_geopy.mean():.6f}m, max = {err_geopy.max():.6f}m
+  • Pyproj:                 mean err = {err_pyproj.mean():.6f}m, max = {err_pyproj.max():.6f}m
   • Great Circle (approx):  mean err = {err_gc.mean():.1f}m,    max = {err_gc.max():.1f}m
 
   Great Circle vs Vincenty:

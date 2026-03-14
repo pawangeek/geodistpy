@@ -276,6 +276,38 @@ def _vincenty_cdist(coords1, coords2, a=WGS84_A, f=WGS84_F):
     return result
 
 
+@jit(nopython=True, fastmath=True, parallel=True, cache=True)
+def _vincenty_1to1(coords1, coords2, a=WGS84_A, f=WGS84_F):
+    """Compute one-to-one Vincenty distances for equally-sized arrays.
+
+    Non-convergent pairs are marked with -1.0 as a sentinel value.
+    """
+    n = coords1.shape[0]
+    result = np.empty(n, dtype=np.float64)
+    for i in prange(n):
+        d = geodesic_vincenty_inverse(coords1[i], coords2[i], a, f)
+        if d is None:
+            d = -1.0  # sentinel: non-convergence
+        result[i] = d
+    return result
+
+
+@jit(nopython=True, fastmath=True, parallel=True, cache=True)
+def _vincenty_one_to_many(origin, coords, a=WGS84_A, f=WGS84_F):
+    """Compute Vincenty distances from one origin to many points.
+
+    Non-convergent pairs are marked with -1.0 as a sentinel value.
+    """
+    n = coords.shape[0]
+    result = np.empty(n, dtype=np.float64)
+    for i in prange(n):
+        d = geodesic_vincenty_inverse(origin, coords[i], a, f)
+        if d is None:
+            d = -1.0  # sentinel: non-convergence
+        result[i] = d
+    return result
+
+
 def _apply_fallback(dist, coords1, coords2=None, a=WGS84_A, f=WGS84_F):
     """Replace sentinel values (-1.0) with geographiclib fallback distances.
 
@@ -296,6 +328,33 @@ def _apply_fallback(dist, coords1, coords2=None, a=WGS84_A, f=WGS84_F):
         # Mirror for symmetric pdist case
         if coords2 is None and i != j:
             dist[j, i] = dist[i, j]
+    return dist
+
+
+def _apply_fallback_1to1(dist, coords1, coords2, a=WGS84_A, f=WGS84_F):
+    """Replace sentinel values (-1.0) for one-to-one vector distances."""
+    mask = dist < 0.0
+    if not mask.any():
+        return dist
+    geod = gglib(a, f)
+    indices = np.where(mask)[0]
+    for i in indices:
+        p1 = coords1[i]
+        p2 = coords2[i]
+        dist[i] = geod.Inverse(p1[0], p1[1], p2[0], p2[1])["s12"]
+    return dist
+
+
+def _apply_fallback_one_to_many(dist, origin, coords, a=WGS84_A, f=WGS84_F):
+    """Replace sentinel values (-1.0) for one-to-many vector distances."""
+    mask = dist < 0.0
+    if not mask.any():
+        return dist
+    geod = gglib(a, f)
+    indices = np.where(mask)[0]
+    for i in indices:
+        p2 = coords[i]
+        dist[i] = geod.Inverse(origin[0], origin[1], p2[0], p2[1])["s12"]
     return dist
 
 

@@ -33,6 +33,13 @@ You can install the `geodistpy` package using `pip`:
 pip install geodistpy
 ```
 
+Optional extras for **pandas** and **GeoPandas** (DataFrame/GeoDataFrame support):
+
+```bash
+pip install geodistpy[pandas]       # use DataFrames with geodist_to_many, geodesic_knn, point_in_radius
+pip install geodistpy[geopandas]    # use GeoDataFrames (includes pandas)
+```
+
 ## Quick Start Guide
 
 The quickest way to start using the `geodistpy` package is to calculate the distance between two geographical coordinates. Here's how you can do it:
@@ -54,10 +61,11 @@ print(f"Distance between Berlin and Paris: {distance_km} kilometers")
 `geodistpy` goes beyond simple distance calculations. Here are a few more things you can do right away:
 
 ```python
-from geodistpy import bearing, destination, midpoint, interpolate, point_in_radius, geodesic_knn
+from geodistpy import bearing, destination, midpoint, interpolate, geodist_to_many, point_in_radius, geodesic_knn
 
 berlin = (52.5200, 13.4050)
 paris  = (48.8566, 2.3522)
+cities = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
 
 # Bearing: initial direction from Berlin to Paris
 print(f"Bearing: {bearing(berlin, paris):.2f}°")
@@ -71,8 +79,11 @@ print(f"Midpoint: {midpoint(berlin, paris)}")
 # 3 evenly-spaced waypoints between Berlin and Paris
 print(f"Waypoints: {interpolate(berlin, paris, n_points=3)}")
 
+# One-to-many: distance from Berlin to each city
+dists = geodist_to_many(berlin, cities, metric='km')
+print(f"Distances to cities: {dists.round(1)} km")
+
 # Which of these cities are within 1000 km of Berlin?
-cities = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
 idx, dists = point_in_radius(berlin, cities, 1000, metric='km')
 print(f"Within 1000 km: {idx}")
 
@@ -81,4 +92,4 @@ idx, dists = geodesic_knn(berlin, cities, k=2, metric='km')
 print(f"2 nearest: {idx}, distances: {dists.round(1)} km")
 ```
 
-For full API details, see the [API Reference](api-reference.md).
+For **pandas DataFrames** and the **after-geocoding workflow**, see [Pandas & GeoPandas Support](pandas-support.md). For full API details, see the [API Reference](api-reference.md).
