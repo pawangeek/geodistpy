@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Geodistpy is a blazing-fast Python library for geodesic distance calculations on the WGS84 ellipsoid. Up to 171x faster than Geopy with sub-millimeter accuracy.">
+        <meta name="description" content="Geodistpy is a blazing-fast Python library for geodesic distance calculations on the WGS84 ellipsoid. Up to 164x faster than Geopy with sub-millimeter accuracy.">
       
       
         <meta name="author" content="Pawan Jain">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="./assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.24">
+      <meta name="generator" content="zensical-0.0.27">
     
     
       
@@ -34,7 +34,7 @@
       
         
       
-      <link rel="stylesheet" href="./assets/stylesheets/modern/main.28978c9b.min.css">
+      <link rel="stylesheet" href="./assets/stylesheets/modern/main.50057488.min.css">
       
         
           
@@ -79,7 +79,7 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
@@ -105,7 +105,7 @@
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -159,7 +159,7 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
@@ -707,6 +707,7 @@
 <li><a href="bearing-destination/">Bearing &amp; Destination</a> — Forward azimuth and Vincenty direct/inverse</li>
 <li><a href="interpolation/">Interpolation &amp; Midpoints</a> — Geodesic waypoints and path generation</li>
 <li><a href="spatial-queries/">Spatial Queries</a> — k-NN and point-in-radius on the ellipsoid</li>
+<li><a href="pandas-support/">Pandas &amp; GeoPandas Support</a> — DataFrames, one-to-many distances, and after-geocoding workflow</li>
 <li><a href="api-reference/">API Reference</a> — Complete function reference</li>
 <li><a href="explanation/">Benchmarks &amp; Internals</a> — Performance benchmarks and implementation details</li>
 </ol>
@@ -714,14 +715,16 @@
 <p>The <code>geodistpy</code> package is a versatile library for geospatial calculations, offering various distance metrics and functionalities. It is built on the principles of geodesy and uses the WGS 84 coordinate system, making it suitable for a wide range of applications, from GPS tracking to geographical analysis.</p>
 <h3 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Blazing fast:</strong> ~0.4 µs per distance call — up to <strong>171x faster than Geopy</strong>, <strong>109x faster than Geographiclib</strong></li>
-<li><strong>Parallel matrix computation:</strong> Up to <strong>1,230x faster</strong> than Geopy for pairwise distance matrices using Numba parallel execution</li>
+<li><strong>Blazing fast:</strong> ~0.4 µs per distance call — up to <strong>164x faster than Geopy</strong>, <strong>105x faster than Geographiclib</strong></li>
+<li><strong>Parallel matrix computation:</strong> Up to <strong>1,183x faster</strong> than Geopy for pairwise distance matrices using Numba parallel execution</li>
 <li><strong>Sub-millimeter accuracy:</strong> Vincenty's inverse formula with mean error of just 9 µm vs Geographiclib reference</li>
 <li><strong>Improved Great Circle:</strong> Andoyer-Lambert flattening correction reduces spherical approximation error by <strong>700x</strong> (from ~13 km to ~19 m)</li>
 <li><strong>Edge case handling:</strong> Antipodal points, poles, date line crossings, and very short distances all handled correctly</li>
 <li><strong>Bearing &amp; destination:</strong> Compute forward azimuth between points and find destination given start + bearing + distance (Vincenty inverse/direct pair)</li>
 <li><strong>Geodesic interpolation:</strong> Generate evenly-spaced waypoints and midpoints along geodesics for routing and visualization</li>
 <li><strong>Spatial queries:</strong> Point-in-radius filtering (geofencing) and k-nearest-neighbour search using exact ellipsoidal distances</li>
+<li><strong>One-to-many distances:</strong> <code>geodist_to_many(origin, points)</code> — “how far from this user to these N stores?”</li>
+<li><strong>Pandas &amp; GeoPandas:</strong> Pass DataFrames or GeoDataFrames directly; get Series or index-aligned results (optional dependency)</li>
 <li><strong>Multiple ellipsoids:</strong> Built-in support for WGS-84, GRS-80, Airy 1830, Intl 1924, Clarke 1880, GRS-67, or pass any custom <code>(a, f)</code> tuple</li>
 </ul>
 <h2 id="quick-example">Quick Example<a class="headerlink" href="#quick-example" title="Permanent link">&para;</a></h2>
@@ -747,10 +750,14 @@
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">mid</span> <span class="o">=</span> <span class="n">midpoint</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">paris</span><span class="p">)</span>
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Midpoint: (</span><span class="si">{</span><span class="n">mid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">mid</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="c1"># k-NN: find 2 nearest cities to Berlin</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="n">cities</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="p">(</span><span class="mf">51.5074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1278</span><span class="p">),</span> <span class="p">(</span><span class="mf">40.7128</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.006</span><span class="p">)]</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">geodesic_knn</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;2 nearest: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">, distances: </span><span class="si">{</span><span class="n">dists</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> km&quot;</span><span class="p">)</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="c1"># One-to-many: distances from Berlin to each city</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="kn">from</span><span class="w"> </span><span class="nn">geodistpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">geodist_to_many</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="n">cities</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">48.8566</span><span class="p">,</span> <span class="mf">2.3522</span><span class="p">),</span> <span class="p">(</span><span class="mf">51.5074</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1278</span><span class="p">),</span> <span class="p">(</span><span class="mf">40.7128</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.006</span><span class="p">)]</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="n">dists</span> <span class="o">=</span> <span class="n">geodist_to_many</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="c1"># k-NN: find 2 nearest cities to Berlin</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="n">idx</span><span class="p">,</span> <span class="n">dists</span> <span class="o">=</span> <span class="n">geodesic_knn</span><span class="p">(</span><span class="n">berlin</span><span class="p">,</span> <span class="n">cities</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;2 nearest: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">, distances: </span><span class="si">{</span><span class="n">dists</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> km&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="using-different-ellipsoids">Using Different Ellipsoids<a class="headerlink" href="#using-different-ellipsoids" title="Permanent link">&para;</a></h3>
 <p>All functions accept an optional <code>ellipsoid</code> parameter. By default, WGS-84 is used:</p>
@@ -896,7 +903,7 @@
       <script id="__config" type="application/json">{"annotate":null,"base":".","features":["content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight"],"search":"./assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="./assets/javascripts/bundle.16f8adc2.min.js"></script>
+      <script src="./assets/javascripts/bundle.5fd3284f.min.js"></script>
       
     
   </body>

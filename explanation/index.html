@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Detailed benchmarks comparing geodistpy with Geopy and Geographiclib. Speed tests, accuracy analysis, edge cases, and implementation details of Vincenty and Great Circle methods.">
+        <meta name="description" content="Detailed benchmarks comparing geodistpy with Geopy, Geographiclib, and Pyproj. Speed tests, accuracy analysis, edge cases, and implementation details of Vincenty and Great Circle methods.">
       
       
         <meta name="author" content="Pawan Jain">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.24">
+      <meta name="generator" content="zensical-0.0.27">
     
     
       
@@ -34,7 +34,7 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.28978c9b.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.50057488.min.css">
       
         
           
@@ -79,7 +79,7 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
@@ -105,7 +105,7 @@
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -159,7 +159,7 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
@@ -1156,6 +1156,9 @@
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Geographiclib: </span><span class="si">{</span><span class="n">distance_gglib</span><span class="si">}</span><span class="s2"> meters&quot;</span><span class="p">)</span>
 </span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Geodistpy: </span><span class="si">{</span><span class="n">distance_geodistpy</span><span class="si">}</span><span class="s2"> meters&quot;</span><span class="p">)</span>
 </span></code></pre></div>
+<blockquote>
+<p>Latest benchmark snapshot (from <code>poetry run python benchmark.py</code>, Mar 14, 2026).</p>
+</blockquote>
 <h3 id="single-pair-performance-10000-calls-best-of-3">Single-Pair Performance (10,000 calls, best of 3)<a class="headerlink" href="#single-pair-performance-10000-calls-best-of-3" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1168,24 +1171,30 @@
 <tbody>
 <tr>
 <td>Geopy</td>
-<td>~636 ms</td>
-<td>~64 µs</td>
+<td>619 ms</td>
+<td>~62 µs</td>
 </tr>
 <tr>
 <td>Geographiclib</td>
-<td>~406 ms</td>
-<td>~41 µs</td>
+<td>396 ms</td>
+<td>~40 µs</td>
+</tr>
+<tr>
+<td>Pyproj (<code>Geod.inv</code>)</td>
+<td>5.42 ms</td>
+<td>~0.5 µs</td>
 </tr>
 <tr>
 <td><strong>Geodistpy (Vincenty+Numba)</strong></td>
-<td><strong>~3.7 ms</strong></td>
+<td><strong>3.78 ms</strong></td>
 <td><strong>~0.4 µs</strong></td>
 </tr>
 </tbody>
 </table>
 <ul>
-<li><strong>Geodistpy is ~171x faster than Geopy</strong></li>
-<li><strong>Geodistpy is ~109x faster than Geographiclib</strong></li>
+<li><strong>Geodistpy is 164x faster than Geopy</strong></li>
+<li><strong>Geodistpy is 105x faster than Geographiclib</strong></li>
+<li><strong>Geodistpy is 1.4x faster than Pyproj</strong></li>
 </ul>
 <h3 id="pairwise-distance-matrix-nn">Pairwise Distance Matrix (N×N)<a class="headerlink" href="#pairwise-distance-matrix-nn" title="Permanent link">&para;</a></h3>
 <p>For matrix computations, Geodistpy uses Numba-parallel loops instead of scipy callbacks, yielding massive speedups:</p>
@@ -1196,34 +1205,38 @@
 <th>Unique Pairs</th>
 <th>Geopy</th>
 <th>Geographiclib</th>
+<th>Pyproj</th>
 <th>Geodistpy</th>
-<th>Speedup vs Geopy</th>
+<th>vs Geopy</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>50</td>
 <td>1,225</td>
-<td>87 ms</td>
-<td>58 ms</td>
-<td><strong>4.1 ms</strong></td>
-<td><strong>21x</strong></td>
+<td>83 ms</td>
+<td>56 ms</td>
+<td>0.91 ms</td>
+<td><strong>4.85 ms</strong></td>
+<td><strong>17x</strong></td>
 </tr>
 <tr>
 <td>100</td>
 <td>4,950</td>
-<td>363 ms</td>
-<td>236 ms</td>
-<td><strong>0.59 ms</strong></td>
-<td><strong>613x</strong></td>
+<td>339 ms</td>
+<td>231 ms</td>
+<td>3.60 ms</td>
+<td><strong>0.48 ms</strong></td>
+<td><strong>702x</strong></td>
 </tr>
 <tr>
 <td>200</td>
 <td>19,900</td>
-<td>1.44 s</td>
+<td>1.43 s</td>
 <td>930 ms</td>
-<td><strong>1.17 ms</strong></td>
-<td><strong>1,230x</strong></td>
+<td>14.59 ms</td>
+<td><strong>1.21 ms</strong></td>
+<td><strong>1,183x</strong></td>
 </tr>
 </tbody>
 </table>
@@ -1249,6 +1262,12 @@
 <td>0.000000</td>
 <td>0.000000</td>
 <td>4.40e-17</td>
+</tr>
+<tr>
+<td>Pyproj (<code>Geod.inv</code>)</td>
+<td>0.000000</td>
+<td>0.000000</td>
+<td>4.72e-17</td>
 </tr>
 <tr>
 <td><strong>Geodistpy (Great Circle)</strong></td>
@@ -1288,8 +1307,8 @@
 </table>
 <h2 id="performance-summary">Performance Summary<a class="headerlink" href="#performance-summary" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Single-pair:</strong> ~0.4 µs per call (171x faster than Geopy, 109x faster than Geographiclib)</li>
-<li><strong>Matrix (N=200):</strong> 1.17 ms for 19,900 pairs (1,230x faster than Geopy)</li>
+<li><strong>Single-pair:</strong> ~0.4 µs per call (164x faster than Geopy, 105x faster than Geographiclib, 1.4x faster than Pyproj)</li>
+<li><strong>Matrix (N=200):</strong> 1.21 ms for 19,900 pairs (1,183x faster than Geopy, 770x faster than Geographiclib, 12.1x faster than Pyproj)</li>
 <li><strong>Vincenty accuracy:</strong> sub-millimeter (mean error = 9 µm)</li>
 <li><strong>Great Circle accuracy:</strong> ~19 m mean error with Andoyer-Lambert flattening correction</li>
 <li>All edge cases handled: antipodal points, poles, date line crossings, short distances</li>
@@ -1427,7 +1446,7 @@
 </span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;2 nearest: indices </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">, distances </span><span class="si">{</span><span class="n">dists</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> km&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
-<p>For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over both Geopy and Geographiclib, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.</p>
+<p>For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over Geopy, Geographiclib, and (in most tested paths) Pyproj, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.</p>
 <p>By adopting Geodistpy, you can significantly enhance the efficiency and performance of your geospatial projects. It is a valuable tool for geospatial professionals and developers seeking both speed and accuracy in their distance computations.</p>
 <p>To get started with Geodistpy, visit the <a href="https://github.com/pawangeek/geodistpy">Geodistpy</a> and explore the documentation for comprehensive usage instructions.</p>
 
@@ -1552,7 +1571,7 @@
       <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.16f8adc2.min.js"></script>
+      <script src="../assets/javascripts/bundle.5fd3284f.min.js"></script>
       
     
   </body>
