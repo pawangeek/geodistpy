@@ -41,13 +41,20 @@ from .geodesic import (
     great_circle_array,
     _vincenty_pdist,
     _vincenty_cdist,
+    _vincenty_1to1,
+    _vincenty_one_to_many,
     _apply_fallback,
+    _apply_fallback_1to1,
+    _apply_fallback_one_to_many,
     _great_circle_pdist,
     _great_circle_cdist,
     _resolve_ellipsoid,
 )
 
 from geographiclib.geodesic import Geodesic as gglib
+
+# Optional pandas/GeoPandas support (lazy use via _as_coords)
+from . import pandas_support
 
 
 def _get_conv_factor(metric):
@@ -74,6 +81,14 @@ def _get_conv_factor(metric):
         raise ValueError(f"Metric {metric} not supported")
 
     return conv_fac
+
+
+def _validate_lat_lon_ranges(coords):
+    """Validate latitude/longitude ranges for an (n, 2) coordinate array."""
+    if (abs(coords[:, 0]) > 90).any():
+        raise ValueError("Latitude values must be in the range [-90, 90]")
+    if (abs(coords[:, 1]) > 180).any():
+        raise ValueError("Longitude values must be in the range [-180, 180]")
 
 
 def geodist(coords1, coords2, metric="meter", ellipsoid="WGS-84"):
@@ -115,8 +130,8 @@ def geodist(coords1, coords2, metric="meter", ellipsoid="WGS-84"):
         >>> geodist((37.7749, -122.4194), (37.7749, -122.4194))
         0.0
     """
-    coords1 = np.asarray(coords1)
-    coords2 = np.asarray(coords2)
+    coords1 = np.asarray(coords1, dtype=np.float64)
+    coords2 = np.asarray(coords2, dtype=np.float64)
     assert coords1.shape == coords2.shape
 
     conv_fac = _get_conv_factor(metric)
@@ -141,10 +156,10 @@ def geodist(coords1, coords2, metric="meter", ellipsoid="WGS-84"):
         raise ValueError("Latitude values must be in the range [-90, 90]")
     if (abs(coords1[:, 1]) > 180).any() or (abs(coords2[:, 1]) > 180).any():
         raise ValueError("Longitude values must be in the range [-180, 180]")
-    n_points = len(coords1)
-    dist = np.asarray(
-        [geodesic_vincenty(coords1[i], coords2[i], a, f) for i in range(n_points)]
-    )
+    coords1 = np.ascontiguousarray(coords1)
+    coords2 = np.ascontiguousarray(coords2)
+    dist = _vincenty_1to1(coords1, coords2, a, f)
+    dist = _apply_fallback_1to1(dist, coords1, coords2, a=a, f=f)
     return dist * conv_fac
 
 
@@ -372,7 +387,7 @@ def midpoint(point1, point2, ellipsoid="WGS-84"):
 # ---------------------------------------------------------------------------
 # Point-in-radius
 # ---------------------------------------------------------------------------
-def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-84"):
+def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None):
     """
     Find all *candidate* points that lie within a given geodesic radius
     of a *center* point on the selected ellipsoid.
@@ -382,26 +397,22 @@ def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-8
     Parameters:
         center : tuple (latitude, longitude)
             Reference point in degrees.
-        candidates : array-like, shape (n, 2)
-            Array of candidate points ``[(lat, lon), ...]``.
+        candidates : array-like, shape (n, 2), or pandas.DataFrame / geopandas.GeoDataFrame
+            Candidate points. If a DataFrame, use *lat_col*/*lon_col* or columns
+            ``lat``/``lon`` or ``latitude``/``longitude``. For GeoDataFrame, point geometry is used.
         radius : float
             Radius threshold in the unit specified by *metric*.
         metric : str, optional
-            Unit for *radius*: ``'meter'``, ``'km'``, ``'mile'``, or
-            ``'nmi'``.  Default is ``'meter'``.
+            Unit for *radius*: ``'meter'``, ``'km'``, ``'mile'``, or ``'nmi'``.  Default is ``'meter'``.
         ellipsoid : str or tuple, optional
             Ellipsoid model to use.  Default is ``'WGS-84'``.
+        lat_col, lon_col : str, optional
+            Column names when *candidates* is a DataFrame. Auto-detect if None.
 
     Returns:
         tuple (indices, distances)
-            *indices* : ndarray of int — indices into *candidates* of points
-            that fall within the radius.
-            *distances* : ndarray of float — the corresponding distances in
-            the requested *metric*.
-
-    Raises:
-        ValueError: If coordinates are out of range, radius is negative,
-            or metric is unsupported.
+            *indices* : positions (or index labels if *candidates* was a DataFrame).
+            *distances* : ndarray of float in *metric*.
 
     Examples:
         >>> pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
@@ -412,40 +423,34 @@ def point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-8
     if radius < 0:
         raise ValueError("radius must be non-negative")
 
-    conv_fac = _get_conv_factor(metric)
-    center = tuple(float(x) for x in center)
-
-    if abs(center[0]) > 90:
+    center = np.asarray(center, dtype=np.float64).reshape(1, 2)
+    if abs(center[0, 0]) > 90:
         raise ValueError("Latitude values must be in the range [-90, 90]")
-    if abs(center[1]) > 180:
+    if abs(center[0, 1]) > 180:
         raise ValueError("Longitude values must be in the range [-180, 180]")
 
-    candidates = np.asarray(candidates, dtype=np.float64)
-    if candidates.ndim != 2 or candidates.shape[1] != 2:
-        raise ValueError("candidates must have shape (n, 2)")
+    candidates, cand_index = pandas_support._as_coords(candidates, lat_col=lat_col, lon_col=lon_col)
+    _validate_lat_lon_ranges(candidates)
 
-    # Compute distances from center to each candidate (in meters)
-    center_arr = np.ascontiguousarray(
-        np.tile(center, (len(candidates), 1)), dtype=np.float64
-    )
+    conv_fac = _get_conv_factor(metric)
     a, f = _resolve_ellipsoid(ellipsoid)
-
-    dists_m = np.array(
-        [
-            geodesic_vincenty(center_arr[i], candidates[i], a, f)
-            for i in range(len(candidates))
-        ]
-    )
-    dists = dists_m * conv_fac
+    center_vec = np.ascontiguousarray(center[0], dtype=np.float64)
+    candidates = np.ascontiguousarray(candidates, dtype=np.float64)
+    dists = _vincenty_one_to_many(center_vec, candidates, a, f)
+    dists = _apply_fallback_one_to_many(dists, center_vec, candidates, a=a, f=f)
+    dists = dists * conv_fac
 
     mask = dists <= radius
-    return np.where(mask)[0], dists[mask]
+    indices = np.where(mask)[0]
+    if cand_index is not None:
+        indices = cand_index[indices].values
+    return indices, dists[mask]
 
 
 # ---------------------------------------------------------------------------
 # k-Nearest Neighbours on geodesic distance
 # ---------------------------------------------------------------------------
-def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84"):
+def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None):
     """
     Find the *k* nearest neighbours to *point* among *candidates* using
     exact geodesic (Vincenty) distances on the selected ellipsoid.
@@ -456,8 +461,9 @@ def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84"):
     Parameters:
         point : tuple (latitude, longitude)
             Query point in degrees.
-        candidates : array-like, shape (n, 2)
-            Array of candidate points ``[(lat, lon), ...]``.
+        candidates : array-like, shape (n, 2), or pandas.DataFrame / geopandas.GeoDataFrame
+            Candidate points. If a DataFrame, use *lat_col*/*lon_col* or columns
+            ``lat``/``lon`` or ``latitude``/``longitude``. For GeoDataFrame, point geometry is used.
         k : int, optional
             Number of nearest neighbours to return.  Default is ``1``.
         metric : str, optional
@@ -465,16 +471,13 @@ def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84"):
             ``'mile'``, or ``'nmi'``.  Default is ``'meter'``.
         ellipsoid : str or tuple, optional
             Ellipsoid model to use.  Default is ``'WGS-84'``.
+        lat_col, lon_col : str, optional
+            Column names when *candidates* is a DataFrame. Auto-detect if None.
 
     Returns:
         tuple (indices, distances)
-            *indices* : ndarray of int, shape (k,) — indices into
-            *candidates* of the *k* closest points, ordered nearest-first.
-            *distances* : ndarray of float, shape (k,) — the corresponding
-            distances in the requested *metric*.
-
-    Raises:
-        ValueError: If *k* < 1 or coordinates are out of range.
+            *indices* : ndarray — positions or index labels of the *k* closest points (nearest-first).
+            *distances* : ndarray of float, shape (k,) in the requested *metric*.
 
     Examples:
         >>> pts = [(48.8566, 2.3522), (40.7128, -74.006), (51.5074, -0.1278)]
@@ -485,38 +488,89 @@ def geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84"):
     if k < 1:
         raise ValueError("k must be >= 1")
 
-    conv_fac = _get_conv_factor(metric)
-    point = tuple(float(x) for x in point)
-
-    if abs(point[0]) > 90:
+    point = np.asarray(point, dtype=np.float64).reshape(1, 2)
+    if abs(point[0, 0]) > 90:
         raise ValueError("Latitude values must be in the range [-90, 90]")
-    if abs(point[1]) > 180:
+    if abs(point[0, 1]) > 180:
         raise ValueError("Longitude values must be in the range [-180, 180]")
 
-    candidates = np.asarray(candidates, dtype=np.float64)
-    if candidates.ndim != 2 or candidates.shape[1] != 2:
-        raise ValueError("candidates must have shape (n, 2)")
+    candidates, cand_index = pandas_support._as_coords(candidates, lat_col=lat_col, lon_col=lon_col)
+    _validate_lat_lon_ranges(candidates)
 
     n = len(candidates)
     if k > n:
         raise ValueError(f"k={k} is greater than the number of candidates ({n})")
 
+    conv_fac = _get_conv_factor(metric)
     a, f = _resolve_ellipsoid(ellipsoid)
-
-    dists_m = np.array(
-        [geodesic_vincenty(point, tuple(candidates[i]), a, f) for i in range(n)]
-    )
-    dists = dists_m * conv_fac
+    point_vec = np.ascontiguousarray(point[0], dtype=np.float64)
+    candidates = np.ascontiguousarray(candidates, dtype=np.float64)
+    dists = _vincenty_one_to_many(point_vec, candidates, a, f)
+    dists = _apply_fallback_one_to_many(dists, point_vec, candidates, a=a, f=f)
+    dists = dists * conv_fac
 
     # Partial sort to find k smallest
     if k == n:
         order = np.argsort(dists)
     else:
-        order = np.argpartition(dists, k)[:k]
-        # Sort those k by distance
+        order = np.argpartition(dists, k - 1)[:k]
         order = order[np.argsort(dists[order])]
 
-    return order, dists[order]
+    out_indices = cand_index[order].values if cand_index is not None else order
+    return out_indices, dists[order]
+
+
+# ---------------------------------------------------------------------------
+# One-to-many distances ("how far from this user to these N stores?")
+# ---------------------------------------------------------------------------
+def geodist_to_many(origin, points, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None):
+    """
+    Return distances from a single *origin* to each of *points* (one-to-many).
+
+    Use this when you have one location (e.g. a user or store) and want
+    distances to many others (e.g. stores or candidates). Same result as
+    ``geodist_matrix([origin], points, ...)[0]`` but with a clearer intent.
+
+    Parameters:
+        origin : tuple (latitude, longitude)
+            Reference point in degrees.
+        points : array-like, shape (n, 2), or pandas.DataFrame / geopandas.GeoDataFrame
+            Target points. If a DataFrame, use *lat_col*/*lon_col* or columns
+            ``lat``/``lon`` or ``latitude``/``longitude``. For GeoDataFrame, point geometry is used.
+        metric : str, optional
+            Unit for returned distances: ``'meter'``, ``'km'``, ``'mile'``,
+            or ``'nmi'``.  Default is ``'meter'``.
+        ellipsoid : str or tuple, optional
+            Ellipsoid model to use.  Default is ``'WGS-84'``.
+        lat_col, lon_col : str, optional
+            Column names when *points* is a DataFrame. Auto-detect if None.
+
+    Returns:
+        ndarray of float, or pandas.Series (if *points* was a DataFrame)
+            Distance from *origin* to each point, in *metric*. Series is indexed by *points*.index.
+
+    Examples:
+        >>> stores = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
+        >>> geodist_to_many((52.5200, 13.4050), stores, metric='km')
+        array([878.39..., 932.06..., 6388.23...])
+    """
+    origin = np.asarray(origin, dtype=np.float64).reshape(1, 2)
+    if abs(origin[0, 0]) > 90:
+        raise ValueError("Latitude values must be in the range [-90, 90]")
+    if abs(origin[0, 1]) > 180:
+        raise ValueError("Longitude values must be in the range [-180, 180]")
+    points, points_index = pandas_support._as_coords(points, lat_col=lat_col, lon_col=lon_col)
+    _validate_lat_lon_ranges(points)
+    conv_fac = _get_conv_factor(metric)
+    a, f = _resolve_ellipsoid(ellipsoid)
+    origin_vec = np.ascontiguousarray(origin[0], dtype=np.float64)
+    points = np.ascontiguousarray(points, dtype=np.float64)
+    dists = _vincenty_one_to_many(origin_vec, points, a, f)
+    dists = _apply_fallback_one_to_many(dists, origin_vec, points, a=a, f=f)
+    dists = dists * conv_fac
+    if points_index is not None and pandas_support.pd is not None:
+        return pandas_support.pd.Series(dists, index=points_index)
+    return dists
 
 
 def geodist_matrix(coords1, coords2=None, metric="meter", ellipsoid="WGS-84"):

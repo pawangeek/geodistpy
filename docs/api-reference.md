@@ -54,6 +54,46 @@ array([2449.92107243, 1745.82567572])
 
 ---
 
+### `geodist_to_many`
+
+```python
+geodist_to_many(origin, points, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None)
+```
+
+Return distances from a single **origin** to each of **points** (one-to-many). Use when you have one location (e.g. a user) and many targets (e.g. stores). Equivalent to `geodist_matrix([origin], points, ...)[0]` with clearer intent.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `origin` | `tuple` | Reference point as `(lat, lon)` in degrees |
+| `points` | `array-like` or `pandas.DataFrame` / `geopandas.GeoDataFrame` | Target points: shape `(n, 2)` or a DataFrame with lat/lon columns (or `lat_col`/`lon_col`) |
+| `metric` | `str` | Unit: `'meter'`, `'km'`, `'mile'`, or `'nmi'`. Default: `'meter'` |
+| `ellipsoid` | `str` or `tuple` | Ellipsoid model. Default: `'WGS-84'` |
+| `lat_col`, `lon_col` | `str`, optional | Column names when *points* is a DataFrame. Auto-detect if None |
+
+**Returns:** `ndarray` of length *n*, or **`pandas.Series`** (indexed by `points.index`) when *points* is a DataFrame/GeoDataFrame.
+
+**Examples:**
+
+```python
+from geodistpy import geodist_to_many
+
+>>> stores = [(48.8566, 2.3522), (51.5074, -0.1278), (40.7128, -74.006)]
+>>> geodist_to_many((52.5200, 13.4050), stores, metric='km')
+array([878.39..., 932.06..., 6388.23...])
+
+# With a DataFrame (requires geodistpy[pandas])
+>>> import pandas as pd
+>>> df = pd.DataFrame({"lat": [48.8566, 51.5074], "lon": [2.3522, -0.1278]})
+>>> geodist_to_many((52.52, 13.40), df, metric='km')
+0    878.39...
+1    932.06...
+dtype: float64
+```
+
+---
+
 ### `greatcircle`
 
 ```python
@@ -304,7 +344,7 @@ from geodistpy import midpoint
 ### `point_in_radius`
 
 ```python
-point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-84")
+point_in_radius(center, candidates, radius, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None)
 ```
 
 Find all candidate points that lie **within a given geodesic radius** of a center point on an ellipsoid. Useful for geofencing, store-locator queries, and spatial filtering.
@@ -312,14 +352,15 @@ Find all candidate points that lie **within a given geodesic radius** of a cente
 **Parameters:**
 
 | Parameter | Type | Description |
-|---|---|---|
+|-----------|------|-------------|
 | `center` | `tuple` | Reference point as `(lat, lon)` in degrees |
-| `candidates` | `array-like` | Array of candidate points `[(lat, lon), ...]` with shape `(n, 2)` |
+| `candidates` | `array-like` or `pandas.DataFrame` / `geopandas.GeoDataFrame` | Candidate points: shape `(n, 2)` or a DataFrame with lat/lon (or `lat_col`/`lon_col`) |
 | `radius` | `float` | Radius threshold in the unit specified by `metric` |
 | `metric` | `str` | Unit for *radius*: `'meter'`, `'km'`, `'mile'`, or `'nmi'`. Default: `'meter'` |
-| `ellipsoid` | `str` or `tuple` | Ellipsoid model: a named key from `ELLIPSOIDS` or a custom `(a, f)` tuple. Default: `'WGS-84'` |
+| `ellipsoid` | `str` or `tuple` | Ellipsoid model. Default: `'WGS-84'` |
+| `lat_col`, `lon_col` | `str`, optional | Column names when *candidates* is a DataFrame. Auto-detect if None |
 
-**Returns:** `tuple (indices, distances)` — *indices* is an ndarray of int (indices of points within the radius); *distances* is an ndarray of float (corresponding distances).
+**Returns:** `tuple (indices, distances)` — *indices* are positions or DataFrame index labels; *distances* is an ndarray of float.
 
 **Examples:**
 
@@ -337,7 +378,7 @@ array([0, 2])    # Paris and London are within 1000 km of Berlin
 ### `geodesic_knn`
 
 ```python
-geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84")
+geodesic_knn(point, candidates, k=1, metric="meter", ellipsoid="WGS-84", lat_col=None, lon_col=None)
 ```
 
 Find the **k nearest neighbours** to a query point among candidates using exact geodesic (Vincenty) distances on an ellipsoid. This fills the gap left by `sklearn.neighbors.BallTree` which only supports the haversine (spherical) metric.
@@ -345,14 +386,15 @@ Find the **k nearest neighbours** to a query point among candidates using exact 
 **Parameters:**
 
 | Parameter | Type | Description |
-|---|---|---|
+|-----------|------|-------------|
 | `point` | `tuple` | Query point as `(lat, lon)` in degrees |
-| `candidates` | `array-like` | Array of candidate points `[(lat, lon), ...]` with shape `(n, 2)` |
+| `candidates` | `array-like` or `pandas.DataFrame` / `geopandas.GeoDataFrame` | Candidate points: shape `(n, 2)` or a DataFrame with lat/lon (or `lat_col`/`lon_col`) |
 | `k` | `int` | Number of nearest neighbours to return. Default: `1` |
 | `metric` | `str` | Unit for returned distances: `'meter'`, `'km'`, `'mile'`, or `'nmi'`. Default: `'meter'` |
-| `ellipsoid` | `str` or `tuple` | Ellipsoid model: a named key from `ELLIPSOIDS` or a custom `(a, f)` tuple. Default: `'WGS-84'` |
+| `ellipsoid` | `str` or `tuple` | Ellipsoid model. Default: `'WGS-84'` |
+| `lat_col`, `lon_col` | `str`, optional | Column names when *candidates* is a DataFrame. Auto-detect if None |
 
-**Returns:** `tuple (indices, distances)` — *indices* is an ndarray of int, shape `(k,)` (indices of the *k* closest points, ordered nearest-first); *distances* is an ndarray of float, shape `(k,)`.
+**Returns:** `tuple (indices, distances)` — *indices* are positions or DataFrame index labels (shape `(k,)`); *distances* is an ndarray of float, shape `(k,)`.
 
 **Raises:**
 
@@ -367,6 +409,57 @@ from geodistpy import geodesic_knn
 >>> idx, dists = geodesic_knn((52.5200, 13.4050), pts, k=2, metric='km')
 >>> idx
 array([0, 2])    # Paris (~880 km) and London (~930 km) are nearest
+```
+
+---
+
+## Pandas Support (optional)
+
+### `coordinates_from_df`
+
+```python
+coordinates_from_df(df, lat_col=None, lon_col=None)
+```
+
+Extract **(latitude, longitude)** as an `(n, 2)` array from a **pandas DataFrame** or **GeoPandas GeoDataFrame**. Use this to pass tabular data into any function that expects an array of points, or to align results with the DataFrame index.
+
+**Requires:** `pip install geodistpy[pandas]` for DataFrame; `pip install geodistpy[geopandas]` for GeoDataFrame.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `df` | `pandas.DataFrame` or `geopandas.GeoDataFrame` | Table with coordinate data (lat/lon columns or point geometry) |
+| `lat_col` | `str`, optional | Latitude column name (DataFrame only). If None, auto-detect from `lat`/`latitude`/`Lat`/`LAT` |
+| `lon_col` | `str`, optional | Longitude column name (DataFrame only). If None, auto-detect from `lon`/`longitude`/`Lon`/`LON` |
+
+**Returns:** `tuple (coords, index)` — *coords* is an `ndarray` of shape `(n, 2)` (lat, lon in degrees); *index* is the DataFrame/GeoDataFrame index.
+
+**GeoDataFrame:** Ignores `lat_col`/`lon_col` and uses the **geometry** column (point geometry; x=lon, y=lat in WGS84).
+
+**Raises:**
+
+- `ImportError` — If DataFrame/GeoDataFrame is passed but pandas/geopandas is not installed.
+- `ValueError` — If columns cannot be inferred or geometry is missing/empty.
+- `TypeError` — If *df* is not a DataFrame or GeoDataFrame.
+
+**Examples:**
+
+```python
+from geodistpy import coordinates_from_df
+
+>>> import pandas as pd
+>>> df = pd.DataFrame({"lat": [48.85, 51.50], "lon": [2.35, -0.12], "name": ["Paris", "London"]})
+>>> coords, index = coordinates_from_df(df)
+>>> coords
+array([[48.85,  2.35],
+       [51.5 , -0.12]])
+>>> list(index)
+[0, 1]
+
+# Custom column names
+>>> df2 = pd.DataFrame({"y": [48.85], "x": [2.35]})
+>>> coords, _ = coordinates_from_df(df2, lat_col="y", lon_col="x")
 ```
 
 ---
@@ -386,7 +479,7 @@ All distance and spatial query functions accept a `metric` parameter with one of
 
 ## Supported Ellipsoids
 
-All Vincenty-based functions (`geodist`, `geodist_matrix`, `bearing`, `destination`, `interpolate`, `midpoint`, `point_in_radius`, `geodesic_knn`) accept an optional `ellipsoid` parameter. You can pass either:
+All Vincenty-based functions (`geodist`, `geodist_to_many`, `geodist_matrix`, `bearing`, `destination`, `interpolate`, `midpoint`, `point_in_radius`, `geodesic_knn`) accept an optional `ellipsoid` parameter. You can pass either:
 
 - A **named string** from the built-in `ELLIPSOIDS` dictionary
 - A **custom tuple** `(semi_major_axis, flattening)` where *a* is in meters

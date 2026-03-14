@@ -1,6 +1,6 @@
 ---
 title: Performance Benchmarks & Implementation – Geodistpy vs Geopy vs Geographiclib
-description: Detailed benchmarks comparing geodistpy with Geopy and Geographiclib. Speed tests, accuracy analysis, edge cases, and implementation details of Vincenty and Great Circle methods.
+description: Detailed benchmarks comparing geodistpy with Geopy, Geographiclib, and Pyproj. Speed tests, accuracy analysis, edge cases, and implementation details of Vincenty and Great Circle methods.
 ---
 
 # Explanation
@@ -35,26 +35,30 @@ print(f"Geographiclib: {distance_gglib} meters")
 print(f"Geodistpy: {distance_geodistpy} meters")
 ```
 
+> Latest benchmark snapshot (from `poetry run python benchmark.py`, Mar 14, 2026).
+
 ### Single-Pair Performance (10,000 calls, best of 3)
 
 | Library | Total Time | Per Call |
 |---|---|---|
-| Geopy | ~636 ms | ~64 µs |
-| Geographiclib | ~406 ms | ~41 µs |
-| **Geodistpy (Vincenty+Numba)** | **~3.7 ms** | **~0.4 µs** |
+| Geopy | 619 ms | ~62 µs |
+| Geographiclib | 396 ms | ~40 µs |
+| Pyproj (`Geod.inv`) | 5.42 ms | ~0.5 µs |
+| **Geodistpy (Vincenty+Numba)** | **3.78 ms** | **~0.4 µs** |
 
-- **Geodistpy is ~171x faster than Geopy**
-- **Geodistpy is ~109x faster than Geographiclib**
+- **Geodistpy is 164x faster than Geopy**
+- **Geodistpy is 105x faster than Geographiclib**
+- **Geodistpy is 1.4x faster than Pyproj**
 
 ### Pairwise Distance Matrix (N×N)
 
 For matrix computations, Geodistpy uses Numba-parallel loops instead of scipy callbacks, yielding massive speedups:
 
-| N points | Unique Pairs | Geopy | Geographiclib | Geodistpy | Speedup vs Geopy |
-|---|---|---|---|---|---|
-| 50 | 1,225 | 87 ms | 58 ms | **4.1 ms** | **21x** |
-| 100 | 4,950 | 363 ms | 236 ms | **0.59 ms** | **613x** |
-| 200 | 19,900 | 1.44 s | 930 ms | **1.17 ms** | **1,230x** |
+| N points | Unique Pairs | Geopy | Geographiclib | Pyproj | Geodistpy | vs Geopy |
+|---|---|---|---|---|---|---|
+| 50 | 1,225 | 83 ms | 56 ms | 0.91 ms | **4.85 ms** | **17x** |
+| 100 | 4,950 | 339 ms | 231 ms | 3.60 ms | **0.48 ms** | **702x** |
+| 200 | 19,900 | 1.43 s | 930 ms | 14.59 ms | **1.21 ms** | **1,183x** |
 
 ### Accuracy (Geographiclib as reference, 5,000 random pairs)
 
@@ -62,6 +66,7 @@ For matrix computations, Geodistpy uses Numba-parallel loops instead of scipy ca
 |---|---|---|---|
 | **Geodistpy (Vincenty)** | **0.000009** | **0.000108** | **1.03e-12** |
 | Geopy (geodesic) | 0.000000 | 0.000000 | 4.40e-17 |
+| Pyproj (`Geod.inv`) | 0.000000 | 0.000000 | 4.72e-17 |
 | **Geodistpy (Great Circle)** | **19.23** | **462.88** | **2.34e-06** |
 
 > **Note:** Geopy shows zero error because it wraps Geographiclib — it's the same algorithm. Geodistpy's Vincenty mean error of **9 micrometers** is negligible. The Great Circle method uses an **Andoyer-Lambert flattening correction** that reduces error from ~13 km (pure sphere) to **~19 m** — a **700x improvement**.
@@ -75,8 +80,8 @@ For matrix computations, Geodistpy uses Numba-parallel loops instead of scipy ca
 
 ## Performance Summary
 
-- **Single-pair:** ~0.4 µs per call (171x faster than Geopy, 109x faster than Geographiclib)
-- **Matrix (N=200):** 1.17 ms for 19,900 pairs (1,230x faster than Geopy)
+- **Single-pair:** ~0.4 µs per call (164x faster than Geopy, 105x faster than Geographiclib, 1.4x faster than Pyproj)
+- **Matrix (N=200):** 1.21 ms for 19,900 pairs (1,183x faster than Geopy, 770x faster than Geographiclib, 12.1x faster than Pyproj)
 - **Vincenty accuracy:** sub-millimeter (mean error = 9 µm)
 - **Great Circle accuracy:** ~19 m mean error with Andoyer-Lambert flattening correction
 - All edge cases handled: antipodal points, poles, date line crossings, short distances
@@ -258,7 +263,7 @@ print(f"2 nearest: indices {idx}, distances {dists.round(1)} km")
 
 ## Conclusion
 
-For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over both Geopy and Geographiclib, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.
+For applications that demand rapid and precise geospatial distance computations, Geodistpy is the clear choice. It offers exceptional speed improvements over Geopy, Geographiclib, and (in most tested paths) Pyproj, making it ideal for tasks involving large datasets or real-time geospatial applications. Despite its speed, Geodistpy maintains accuracy on par with Geographiclib, ensuring that fast calculations do not compromise precision.
 
 By adopting Geodistpy, you can significantly enhance the efficiency and performance of your geospatial projects. It is a valuable tool for geospatial professionals and developers seeking both speed and accuracy in their distance computations.
 
