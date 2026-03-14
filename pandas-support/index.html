@@ -15,6 +15,10 @@
         <link rel="canonical" href="https://pawangeek.github.io/geodistpy/pandas-support/">
       
       
+        <link rel="prev" href="../spatial-queries/">
+      
+      
+        <link rel="next" href="../api-reference/">
       
       
         
@@ -360,6 +364,242 @@
   
 
       </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pandas & GeoPandas Support
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pandas & GeoPandas Support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation (optional)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#after-geocoding-the-typical-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After geocoding: the typical workflow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="After geocoding: the typical workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-geopy-geodistpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: geopy → geodistpy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-pandas-dataframes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using pandas DataFrames
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using pandas DataFrames">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#column-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Column names
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#functions-that-accept-dataframes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functions that accept DataFrames
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-stores-in-a-dataframe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: stores in a DataFrame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-column-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom column names
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extracting-coordinates-coordinates_from_df" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extracting coordinates: coordinates_from_df
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extracting coordinates: coordinates_from_df">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pandas-dataframe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pandas DataFrame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geopandas-geodataframe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GeoPandas GeoDataFrame
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-to-many-distances-geodist_to_many" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One-to-many distances: geodist_to_many
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -854,6 +1094,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../spatial-queries/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Spatial Queries">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Spatial Queries
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../api-reference/" class="md-footer__link md-footer__link--next" aria-label="Next: API Reference">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                API Reference
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">
